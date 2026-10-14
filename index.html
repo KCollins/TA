@@ -1,0 +1,337 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+  <title>SSI Travel Authorization & Itinerary Generator</title>
+
+  <!-- Tailwind CSS -->
+  <script src="https://cdn.tailwindcss.com"></script>
+  <!-- pdf-lib for filling existing AcroForm PDFs -->
+  <script src="https://unpkg.com/pdf-lib@1.17.1/dist/pdf-lib.min.js"></script>
+  <!-- pdfmake for generating new PDF documents -->
+  <script src="https://cdnjs.cloudflare.com/ajax/libs/pdfmake/0.2.7/pdfmake.min.js"></script>
+  <script src="https://cdnjs.cloudflare.com/ajax/libs/pdfmake/0.2.7/vfs_fonts.js"></script>
+</head>
+<body class="bg-slate-100 text-slate-800 font-sans p-6">
+
+  <div class="max-w-4xl mx-auto bg-white p-8 rounded-xl shadow-md border border-slate-200">
+    <header class="border-b pb-4 mb-6">
+      <h1 class="text-2xl font-bold text-slate-900">Space Science Institute - TA Assistant</h1>
+      <p class="text-sm text-slate-500">Automate TA forms, meal calculations, and itinerary summaries.</p>
+    </header>
+
+    <form id="taForm" class="space-y-6" onsubmit="event.preventDefault();">
+      
+      <!-- General Trip Metadata -->
+      <section>
+        <h2 class="text-lg font-semibold text-slate-700 mb-3 border-b pb-1">1. Traveler & Trip Info</h2>
+        <div class="grid grid-cols-1 md:grid-cols-3 gap-4">
+          <div>
+            <label class="block text-xs font-semibold text-slate-600 mb-1">Traveler Name (Last, First)</label>
+            <input type="text" id="travelerName" placeholder="Doe, Jane" class="w-full border rounded p-2 text-sm border-slate-300" required />
+          </div>
+          <div>
+            <label class="block text-xs font-semibold text-slate-600 mb-1">TA Number</label>
+            <input type="text" id="taNumber" placeholder="5781" class="w-full border rounded p-2 text-sm border-slate-300" />
+          </div>
+          <div>
+            <label class="block text-xs font-semibold text-slate-600 mb-1">Location / Destination</label>
+            <input type="text" id="location" placeholder="Boulder, CO" class="w-full border rounded p-2 text-sm border-slate-300" required />
+          </div>
+          <div>
+            <label class="block text-xs font-semibold text-slate-600 mb-1">Start Date</label>
+            <input type="date" id="startDate" class="w-full border rounded p-2 text-sm border-slate-300" required />
+          </div>
+          <div>
+            <label class="block text-xs font-semibold text-slate-600 mb-1">End Date</label>
+            <input type="date" id="endDate" class="w-full border rounded p-2 text-sm border-slate-300" required />
+          </div>
+          <div>
+            <label class="block text-xs font-semibold text-slate-600 mb-1">Business Purpose</label>
+            <input type="text" id="businessPurpose" placeholder="Present research paper at conference" class="w-full border rounded p-2 text-sm border-slate-300" required />
+          </div>
+        </div>
+      </section>
+
+      <!-- Per Diem & Expense Estimates -->
+      <section>
+        <h2 class="text-lg font-semibold text-slate-700 mb-3 border-b pb-1">2. Expense Breakdown & Per Diem Rules</h2>
+        <div class="grid grid-cols-1 md:grid-cols-3 gap-4">
+          <div>
+            <label class="block text-xs font-semibold text-slate-600 mb-1">Daily Meal Per Diem ($)</label>
+            <input type="number" id="dailyMealRate" value="69" step="1" class="w-full border rounded p-2 text-sm border-slate-300" />
+          </div>
+          <div>
+            <label class="block text-xs font-semibold text-slate-600 mb-1">Nightly Lodging Rate ($)</label>
+            <input type="number" id="lodgingRate" value="180" step="1" class="w-full border rounded p-2 text-sm border-slate-300" />
+          </div>
+          <div>
+            <label class="block text-xs font-semibold text-slate-600 mb-1">Airline Ticket ($)</label>
+            <input type="number" id="airfareTotal" placeholder="450.00" step="0.01" class="w-full border rounded p-2 text-sm border-slate-300" />
+          </div>
+        </div>
+
+        <!-- Calculated Summary Box -->
+        <div class="mt-4 p-4 bg-slate-50 border rounded-lg flex flex-wrap justify-between text-sm">
+          <div><span class="font-semibold text-slate-600">Total Days:</span> <span id="calcDays">0</span></div>
+          <div><span class="font-semibold text-slate-600">Est. Meals (75%/100% Rule):</span> $<span id="calcMeals">0.00</span></div>
+          <div><span class="font-semibold text-slate-600">Est. Lodging:</span> $<span id="calcLodging">0.00</span></div>
+        </div>
+      </section>
+
+      <!-- Cost Center Allocations -->
+      <section>
+        <h2 class="text-lg font-semibold text-slate-700 mb-3 border-b pb-1">3. Cost Center Allocation</h2>
+        <div class="grid grid-cols-1 md:grid-cols-3 gap-4">
+          <div>
+            <label class="block text-xs font-semibold text-slate-600 mb-1">Cost Center No.</label>
+            <input type="text" id="costCenterNo" placeholder="1025-001" class="w-full border rounded p-2 text-sm border-slate-300" />
+          </div>
+          <div>
+            <label class="block text-xs font-semibold text-slate-600 mb-1">Allocated Amount ($)</label>
+            <input type="number" id="costCenterAmt" placeholder="1250.00" step="0.01" class="w-full border rounded p-2 text-sm border-slate-300" />
+          </div>
+          <div>
+            <label class="block text-xs font-semibold text-slate-600 mb-1">Description</label>
+            <input type="text" id="costCenterDesc" placeholder="NASA Grant Travel Support" class="w-full border rounded p-2 text-sm border-slate-300" />
+          </div>
+        </div>
+      </section>
+
+      <!-- Template File Upload OR Local Path -->
+      <section class="p-4 bg-amber-50 border border-amber-200 rounded-lg">
+        <label class="block text-xs font-bold text-amber-800 mb-1">TA PDF Template File</label>
+        <p class="text-xs text-amber-700 mb-2">Upload your fillable <code>TA_Template.pdf</code> or host it in your repository root.</p>
+        <input type="file" id="pdfTemplateInput" accept="application/pdf" class="text-xs text-slate-600" />
+      </section>
+
+      <!-- Action Buttons -->
+      <div class="flex flex-wrap gap-4 pt-4 border-t">
+        <button type="button" onclick="inspectFormFields()" class="px-4 py-2 bg-slate-600 hover:bg-slate-700 text-white font-medium rounded-md text-sm shadow">
+          🔍 Inspect PDF Field Names
+        </button>
+        <button type="button" onclick="generateFilledTA()" class="px-4 py-2 bg-blue-600 hover:bg-blue-700 text-white font-medium rounded-md text-sm shadow">
+          📄 Download Filled TA PDF
+        </button>
+        <button type="button" onclick="generateItineraryPDF()" class="px-4 py-2 bg-emerald-600 hover:bg-emerald-700 text-white font-medium rounded-md text-sm shadow">
+          🗓️ Generate Itinerary Summary PDF
+        </button>
+      </div>
+
+    </form>
+  </div>
+
+  <script>
+    // Calculations for Per Diem Days & Totals
+    function calculateTotals() {
+      const start = new Date(document.getElementById('startDate').value);
+      const end = new Date(document.getElementById('endDate').value);
+      const dailyMeal = parseFloat(document.getElementById('dailyMealRate').value) || 0;
+      const dailyLodging = parseFloat(document.getElementById('lodgingRate').value) || 0;
+
+      if (isNaN(start) || isNaN(end) || end < start) {
+        document.getElementById('calcDays').innerText = "0";
+        document.getElementById('calcMeals').innerText = "0.00";
+        document.getElementById('calcLodging').innerText = "0.00";
+        return { totalDays: 0, mealTotal: 0, lodgingTotal: 0 };
+      }
+
+      const diffTime = Math.abs(end - start);
+      const totalDays = Math.ceil(diffTime / (1000 * 60 * 60 * 24)) + 1;
+      const lodgingNights = totalDays > 1 ? totalDays - 1 : 1;
+
+      let mealTotal = 0;
+      if (totalDays === 1) {
+        mealTotal = dailyMeal * 0.75;
+      } else {
+        // First and Last days are 75%, middle days are 100%
+        mealTotal = (dailyMeal * 0.75 * 2) + (dailyMeal * (totalDays - 2));
+      }
+
+      const lodgingTotal = dailyLodging * lodgingNights;
+
+      document.getElementById('calcDays').innerText = totalDays;
+      document.getElementById('calcMeals').innerText = mealTotal.toFixed(2);
+      document.getElementById('calcLodging').innerText = lodgingTotal.toFixed(2);
+
+      return { totalDays, mealTotal, lodgingTotal, lodgingNights };
+    }
+
+    document.getElementById('startDate').addEventListener('change', calculateTotals);
+    document.getElementById('endDate').addEventListener('change', calculateTotals);
+    document.getElementById('dailyMealRate').addEventListener('input', calculateTotals);
+    document.getElementById('lodgingRate').addEventListener('input', calculateTotals);
+
+    // Load PDF ArrayBuffer from File Input or default local URL
+    async function getTemplateBytes() {
+      const fileInput = document.getElementById('pdfTemplateInput');
+      if (fileInput.files.length > 0) {
+        return await fileInput.files[0].arrayBuffer();
+      } else {
+        const response = await fetch('./TA_Template.pdf');
+        if (!response.ok) throw new Error("Could not find default 'TA_Template.pdf' in root.");
+        return await response.arrayBuffer();
+      }
+    }
+
+    // Diagnostic tool to list AcroForm fields in browser console
+    async function inspectFormFields() {
+      try {
+        const bytes = await getTemplateBytes();
+        const pdfDoc = await PDFLib.PDFDocument.load(bytes);
+        const form = pdfDoc.getForm();
+        const fields = form.getFields();
+
+        console.log("=== PDF FORM FIELD NAMES ===");
+        fields.forEach(field => {
+          console.log(`Field Name: "${field.getName()}" | Type: ${field.constructor.name}`);
+        });
+        alert(`Found ${fields.length} form fields! Open your browser DevTools Console (F12) to inspect the field names.`);
+      } catch (err) {
+        alert("Error reading PDF: " + err.message);
+      }
+    }
+
+    // Auto-fill existing TA PDF template using pdf-lib
+    async function generateFilledTA() {
+      try {
+        const bytes = await getTemplateBytes();
+        const pdfDoc = await PDFLib.PDFDocument.load(bytes);
+        const form = pdfDoc.getForm();
+        const totals = calculateTotals();
+
+        // Convenience safe setter
+        const setField = (fieldName, val) => {
+          try {
+            const field = form.getTextField(fieldName);
+            if (field) field.setText(String(val));
+          } catch (e) {
+            console.warn(`Field '${fieldName}' not found or not a text field.`);
+          }
+        };
+
+        // Populate fields based on user entries (Adjust field names to match your PDF AcroForm names)
+        setField('TA NUMBER', document.getElementById('taNumber').value || '');
+        setField('NAME', document.getElementById('travelerName').value || '');
+        setField('LOCATION', document.getElementById('location').value || '');
+        setField('BUSINESS PURPOSE', document.getElementById('businessPurpose').value || '');
+        
+        const start = document.getElementById('startDate').value;
+        const end = document.getElementById('endDate').value;
+        setField('TRAVEL PERIOD', `${start} to ${end}`);
+
+        // Set Calculated Totals
+        setField('MEALS_TOTAL', totals.mealTotal.toFixed(2));
+        setField('LODGING_TOTAL', totals.lodgingTotal.toFixed(2));
+        setField('AIRLINE_TOTAL', document.getElementById('airfareTotal').value || '');
+
+        // Page 2 - Cost Center Allocations
+        setField('COST_CENTER_NO_1', document.getElementById('costCenterNo').value || '');
+        setField('AMOUNT_1', document.getElementById('costCenterAmt').value || '');
+        setField('DESCRIPTION_1', document.getElementById('costCenterDesc').value || '');
+
+        // Save and trigger download
+        const pdfBytes = await pdfDoc.save();
+        const blob = new Blob([pdfBytes], { type: 'application/pdf' });
+        const link = document.createElement('a');
+        link.href = URL.createObjectURL(blob);
+        link.download = `TA_${document.getElementById('taNumber').value || 'Draft'}_Filled.pdf`;
+        link.click();
+
+      } catch (err) {
+        alert("Error filling TA PDF: " + err.message + "\nEnsure your PDF template is present.");
+      }
+    }
+
+    // Generate Itinerary & Per Diem Summary Page using pdfmake
+    function generateItineraryPDF() {
+      const totals = calculateTotals();
+      const name = document.getElementById('travelerName').value || 'N/A';
+      const taNum = document.getElementById('taNumber').value || 'Pending';
+      const location = document.getElementById('location').value || 'N/A';
+      const purpose = document.getElementById('businessPurpose').value || 'N/A';
+      const start = document.getElementById('startDate').value || 'N/A';
+      const end = document.getElementById('endDate').value || 'N/A';
+
+      const docDefinition = {
+        content: [
+          { text: 'SPACE SCIENCE INSTITUTE', style: 'header', alignment: 'center' },
+          { text: 'Travel Itinerary & Per Diem Justification Summary', style: 'subheader', alignment: 'center', margin: [0, 2, 0, 15] },
+
+          {
+            style: 'tableExample',
+            table: {
+              widths: ['30%', '70%'],
+              body: [
+                [{ text: 'Traveler Name:', bold: true }, name],
+                [{ text: 'TA Serial Number:', bold: true }, taNum],
+                [{ text: 'Destination:', bold: true }, location],
+                [{ text: 'Travel Dates:', bold: true }, `${start} to ${end} (${totals.totalDays} Total Days)`],
+                [{ text: 'Business Purpose:', bold: true }, purpose]
+              ]
+            },
+            layout: 'lightHorizontalLines',
+            margin: [0, 0, 0, 15]
+          },
+
+          { text: 'Per Diem Meal Calculation (GSA Standard Rule)', style: 'sectionHeader' },
+          {
+            style: 'tableExample',
+            table: {
+              widths: ['25%', '25%', '25%', '25%'],
+              body: [
+                [
+                  { text: 'Day Category', bold: true },
+                  { text: 'Calculation Rate', bold: true },
+                  { text: 'Daily Rate', bold: true },
+                  { text: 'Total Meal Amount', bold: true }
+                ],
+                ['Day 1 (Travel Out)', '75%', `$${document.getElementById('dailyMealRate').value}`, `$${(parseFloat(document.getElementById('dailyMealRate').value) * 0.75).toFixed(2)}`],
+                [`Days 2-${totals.totalDays > 1 ? totals.totalDays - 1 : 1} (Full Days)`, '100%', `$${document.getElementById('dailyMealRate').value}`, `$${(parseFloat(document.getElementById('dailyMealRate').value) * Math.max(0, totals.totalDays - 2)).toFixed(2)}`],
+                [`Day ${totals.totalDays} (Travel Return)`, '75%', `$${document.getElementById('dailyMealRate').value}`, `$${(parseFloat(document.getElementById('dailyMealRate').value) * 0.75).toFixed(2)}`],
+                [{ text: 'Estimated Total Meals', bold: true, colSpan: 3 }, '', '', { text: `$${totals.mealTotal.toFixed(2)}`, bold: true }]
+              ]
+            },
+            margin: [0, 5, 0, 15]
+          },
+
+          { text: 'Cost Center Allocation', style: 'sectionHeader' },
+          {
+            style: 'tableExample',
+            table: {
+              widths: ['30%', '30%', '40%'],
+              body: [
+                [{ text: 'Cost Center No.', bold: true }, { text: 'Amount', bold: true }, { text: 'Description', bold: true }],
+                [
+                  document.getElementById('costCenterNo').value || 'N/A',
+                  `$${document.getElementById('costCenterAmt').value || '0.00'}`,
+                  document.getElementById('costCenterDesc').value || 'N/A'
+                ]
+              ]
+            },
+            margin: [0, 5, 0, 15]
+          },
+
+          { text: 'Attached Back-Up Documentation Checklist', style: 'sectionHeader' },
+          {
+            ul: [
+              'GSA Federal Per Diem Rate Sheet',
+              'Flight Comparison Quotes / E-Ticket Itinerary',
+              'Google Maps / Mileage Route Proof (if applicable)',
+              'Conference Registration / Meeting Agenda'
+            ]
+          }
+        ],
+        styles: {
+          header: { fontSize: 16, bold: true },
+          subheader: { fontSize: 12, color: '#475569' },
+          sectionHeader: { fontSize: 12, bold: true, margin: [0, 10, 0, 5], color: '#1e293b' }
+        }
+      };
+
+      pdfMake.createPdf(docDefinition).download(`TA_${taNum}_Itinerary_Summary.pdf`);
+    }
+  </script>
+</body>
+</html>
