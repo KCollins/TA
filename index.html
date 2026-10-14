@@ -92,7 +92,7 @@
 
       <!-- Cost Center Allocations -->
       <section>
-        <h2 class="text-lg font-semibold text-slate-700 mb-3 border-b pb-1">3. Cost Center Allocation (Page 2)</h2>
+        <h2 class="text-lg font-semibold text-slate-700 mb-3 border-b pb-1">3. Cost Center Allocation (TA Form Page 2)</h2>
         <div class="grid grid-cols-1 md:grid-cols-3 gap-4">
           <div>
             <label class="block text-xs font-semibold text-slate-600 mb-1">Cost Center No.</label>
@@ -197,12 +197,10 @@
         if (data.rates && data.rates.length > 0) {
           const rateData = data.rates[0];
           
-          // Set M&IE rate
           if (rateData.rate[0] && rateData.rate[0].meals) {
             document.getElementById('dailyMealRate').value = rateData.rate[0].meals;
           }
 
-          // Determine month for lodging rate lookup
           const monthIndex = startDateVal ? new Date(startDateVal).getMonth() : 0;
           const monthKeys = ['Jan', 'Feb', 'Mar', 'Apr', 'May', 'Jun', 'Jul', 'Aug', 'Sep', 'Oct', 'Nov', 'Dec'];
           const monthKey = monthKeys[monthIndex];
@@ -235,7 +233,7 @@
       }
     }
 
-    // Auto-fill existing TA PDF Template using exact console field names
+    // Auto-fill existing TA PDF Template
     async function generateFilledTA() {
       try {
         const bytes = await getTemplateBytes();
@@ -297,14 +295,24 @@
       }
     }
 
-    // Generate Official GSA Rate Attachment PDF
+    // Generate Official GSA Rate Attachment PDF with Audit Record
     function generateGSARateSheetPDF() {
-      const city = document.getElementById('city').value || 'Destination';
-      const state = document.getElementById('stateCode').value || 'State';
+      const city = document.getElementById('city').value.trim() || 'Destination';
+      const state = document.getElementById('stateCode').value.trim().toUpperCase() || 'ST';
       const mealRate = document.getElementById('dailyMealRate').value;
       const lodgingRate = document.getElementById('lodgingRate').value;
-      const start = document.getElementById('startDate').value || 'N/A';
-      const year = start !== 'N/A' ? new Date(start).getFullYear() : new Date().getFullYear();
+      const start = document.getElementById('startDate').value;
+      const year = start ? new Date(start).getFullYear() : new Date().getFullYear();
+
+      // Current Date Format
+      const todayFormatted = new Date().toLocaleDateString('en-US', {
+        year: 'numeric',
+        month: 'long',
+        day: 'numeric'
+      });
+
+      // Construct live GSA web search URL
+      const gsaWebUrl = `https://www.gsa.gov/travel/plan-book/per-diem-rates/per-diem-rates-results?action=perdiems_report&fiscal_year=${year}&state=${state}&city=${encodeURIComponent(city)}&zip=`;
 
       const docDefinition = {
         content: [
@@ -335,8 +343,19 @@
             },
             margin: [0, 5, 0, 20]
           },
-          { text: 'Certification Notice', style: 'sectionHeader' },
-          { text: `This printout serves as official documentation of standard GSA Federal Per Diem maximum rates for travel to ${city}, ${state} during FY ${year}. Rates attached to Space Science Institute TA submission.`, fontSize: 10, italic: true, color: '#475569' }
+          { text: 'Documentation & Data Verification', style: 'sectionHeader' },
+          {
+            text: [
+              `These rates were obtained on `,
+              { text: todayFormatted, bold: true },
+              ` from the GSA Per Diem API.\n\n`,
+              `Current official rates can be verified online at the following link:\n`,
+              { text: gsaWebUrl, link: gsaWebUrl, color: '#0284c7', decoration: 'underline' }
+            ],
+            fontSize: 9.5,
+            color: '#334155',
+            margin: [0, 5, 0, 15]
+          }
         ],
         styles: {
           agencyHeader: { fontSize: 10, color: '#64748b', bold: true },
@@ -348,7 +367,7 @@
       pdfMake.createPdf(docDefinition).download(`GSA_PerDiem_Rates_${city}_${state}.pdf`);
     }
 
-    // Generate Itinerary Summary PDF
+    // Generate Itinerary Summary PDF (Cleaned - Cost Center Removed)
     function generateItineraryPDF() {
       const totals = calculateTotals();
       const name = document.getElementById('travelerName').value || 'N/A';
