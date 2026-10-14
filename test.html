@@ -15,11 +15,11 @@
   
   <style>
     .field-empty {
-      background-color: #fdf2f8 !important; /* Soft pink */
+      background-color: #fdf2f8 !important; /* Soft pink for visual checklist */
       border-color: #f472b6 !important;
     }
     .field-invalid {
-      background-color: #fef2f2 !important; /* Soft red */
+      background-color: #fef2f2 !important; /* Soft red for date errors */
       border-color: #f87171 !important;
     }
   </style>
@@ -44,7 +44,7 @@
       </div>
     </header>
 
-    <!-- Date Mismatch Validation Warning Banner -->
+    <!-- Date Mismatch Validation Banner -->
     <div id="dateValidationBanner" class="hidden mb-6 p-4 bg-red-50 border border-red-300 text-red-800 rounded-lg text-xs font-medium space-y-1"></div>
 
     <form id="taForm" class="space-y-6" onsubmit="event.preventDefault();">
@@ -73,7 +73,7 @@
         <div class="flex justify-between items-center mb-3">
           <div>
             <h2 class="text-md font-semibold text-slate-800">2. Trip Legs & Destination Itinerary</h2>
-            <p class="text-xs text-slate-500">Add consecutive trip legs. Dates are checked dynamically for overlaps or gaps.</p>
+            <p class="text-xs text-slate-500">Add consecutive trip legs. Per diem is automatically calculated for Business legs.</p>
           </div>
           <button type="button" onclick="addLegRow()" class="px-3 py-1 bg-emerald-600 hover:bg-emerald-700 text-white rounded text-xs font-semibold shadow">
             ➕ Add Trip Leg
@@ -94,12 +94,12 @@
         </div>
       </section>
 
-      <!-- 3. Multi-Flight Comparisons -->
+      <!-- 3. Multi-Flight Comparisons & Image Attachment -->
       <section class="border p-4 rounded-lg bg-white border-slate-200">
         <div class="flex justify-between items-center mb-3">
           <div>
             <h2 class="text-md font-semibold text-slate-800">3. Flight Quotes & Comparisons</h2>
-            <p class="text-xs text-slate-500">Document baseline flights vs. comparable quotes.</p>
+            <p class="text-xs text-slate-500">Support for round-trip/one-way flights, Google Flights deep search, and screenshot proof.</p>
           </div>
           <button type="button" onclick="addFlightRow()" class="px-3 py-1 bg-sky-600 hover:bg-sky-700 text-white rounded text-xs font-semibold shadow">
             ➕ Add Flight Comparison
@@ -109,15 +109,15 @@
         <div id="flightsContainer" class="space-y-4"></div>
       </section>
 
-      <!-- 4. Multi-Car Vehicle Mileage -->
+      <!-- 4. Ground Mileage & Map Launcher -->
       <section class="border p-4 rounded-lg bg-white border-slate-200">
         <div class="flex justify-between items-center mb-3">
           <div>
-            <h2 class="text-md font-semibold text-slate-800">4. Personal Vehicle Mileage Trips</h2>
-            <p class="text-xs text-slate-500">Add ground mileage legs (airport transfers, conference shuttles).</p>
+            <h2 class="text-md font-semibold text-slate-800">4. Personal Vehicle & Transit Trips (Google Maps)</h2>
+            <p class="text-xs text-slate-500">Calculate reimbursement for personal car, taxi/rideshare, or train routes.</p>
           </div>
           <button type="button" onclick="addMileageRow()" class="px-3 py-1 bg-purple-600 hover:bg-purple-700 text-white rounded text-xs font-semibold shadow">
-            ➕ Add Mileage Trip
+            ➕ Add Mileage/Transit Trip
           </button>
         </div>
 
@@ -177,7 +177,11 @@
     let mileageCounter = 0;
     let costCenterCounter = 0;
 
-    // --- Soft Pink Highlighting & Validation ---
+    // Image Data Storage Maps
+    const flightImages = {};
+    const mileageImages = {};
+
+    // --- Soft Pink Checklist Highlighting ---
     function updateFieldHighlights() {
       const inputs = document.querySelectorAll('.chk-input');
       inputs.forEach(input => {
@@ -287,8 +291,14 @@
       const html = `
         <div id="flightRow_${id}" class="border p-3 rounded bg-slate-50/50 space-y-2 relative border-slate-200">
           <div class="flex justify-between items-center border-b pb-1">
-            <span class="text-xs font-bold text-sky-900">Flight #${id}</span>
-            <div class="flex items-center gap-3">
+            <div class="flex items-center gap-2">
+              <span class="text-xs font-bold text-sky-900">Flight #${id}</span>
+              <select id="flType_${id}" onchange="toggleFlightType(${id})" class="chk-input text-[11px] font-semibold border rounded p-0.5 bg-white">
+                <option value="Round Trip" ${data.type === 'One Way' ? '' : 'selected'}>🔄 Round Trip</option>
+                <option value="One Way" ${data.type === 'One Way' ? 'selected' : ''}>➡️ One Way</option>
+              </select>
+            </div>
+            <div class="flex items-center gap-2">
               <button type="button" onclick="openGoogleFlights(${id})" class="px-2 py-0.5 bg-sky-100 hover:bg-sky-200 text-sky-800 text-[11px] font-semibold rounded border border-sky-300">
                 🔍 Search on Google Flights
               </button>
@@ -306,10 +316,10 @@
               <input type="text" id="flDest_${id}" value="${data.dest || ''}" placeholder="SFO" class="chk-input w-full border rounded p-1.5" />
             </div>
             <div>
-              <label class="block text-slate-500 mb-0.5">Outbound Date</label>
+              <label class="block text-slate-500 mb-0.5">Departure Date</label>
               <input type="date" id="flStartDate_${id}" value="${data.startDate || ''}" class="chk-input w-full border rounded p-1.5" />
             </div>
-            <div>
+            <div id="flReturnDateCol_${id}">
               <label class="block text-slate-500 mb-0.5">Return Date</label>
               <input type="date" id="flEndDate_${id}" value="${data.endDate || ''}" class="chk-input w-full border rounded p-1.5" />
             </div>
@@ -333,10 +343,23 @@
               </div>
             </div>
           </div>
+
+          <!-- Screenshot Upload Box -->
+          <div class="p-2 bg-sky-50/50 border border-sky-200 rounded text-xs mt-2">
+            <div class="flex justify-between items-center">
+              <div>
+                <span class="font-bold text-sky-900">📸 Attach Google Flights Screenshot Proof (Optional)</span>
+                <p class="text-[10px] text-slate-500">Take a snippet screenshot (<code>Win+Shift+S</code> or <code>Cmd+Shift+4</code>) and upload the image file here.</p>
+              </div>
+              <input type="file" accept="image/*" onchange="handleImageUpload(event, ${id}, 'flight')" class="text-[11px] text-slate-600" />
+            </div>
+            <div id="flImagePreview_${id}" class="mt-2 hidden text-emerald-700 text-[11px] font-semibold">✓ Image proof attached!</div>
+          </div>
         </div>
       `;
 
       container.insertAdjacentHTML('beforeend', html);
+      if (data.type === 'One Way') toggleFlightType(id);
       updateFieldHighlights();
       calculateTotals();
     }
@@ -344,8 +367,19 @@
     function removeFlightRow(id) {
       const el = document.getElementById(`flightRow_${id}`);
       if (el) el.remove();
+      delete flightImages[id];
       calculateTotals();
       updateFieldHighlights();
+    }
+
+    function toggleFlightType(id) {
+      const type = document.getElementById(`flType_${id}`).value;
+      const returnCol = document.getElementById(`flReturnDateCol_${id}`);
+      if (type === 'One Way') {
+        returnCol.classList.add('invisible');
+      } else {
+        returnCol.classList.remove('invisible');
+      }
     }
 
     function openGoogleFlights(id) {
@@ -353,17 +387,21 @@
       const dest = document.getElementById(`flDest_${id}`).value.trim();
       const start = document.getElementById(`flStartDate_${id}`).value;
       const end = document.getElementById(`flEndDate_${id}`).value;
+      const type = document.getElementById(`flType_${id}`).value;
 
-      let url = `https://www.google.com/travel/flights`;
-      if (origin && dest) {
-        url += `?q=flights+from+${encodeURIComponent(origin)}+to+${encodeURIComponent(dest)}`;
+      let url = `https://www.google.com/travel/flights?q=`;
+      if (type === 'One Way') {
+        url += `one-way+flights+from+${encodeURIComponent(origin || 'origin')}+to+${encodeURIComponent(dest || 'destination')}`;
+        if (start) url += `+on+${start}`;
+      } else {
+        url += `flights+from+${encodeURIComponent(origin || 'origin')}+to+${encodeURIComponent(dest || 'destination')}`;
         if (start) url += `+on+${start}`;
         if (end) url += `+return+${end}`;
       }
       window.open(url, '_blank');
     }
 
-    // --- Dynamic Mileage Trips ---
+    // --- Dynamic Mileage & Route Map Builder ---
     function addMileageRow(data = {}) {
       mileageCounter++;
       const id = mileageCounter;
@@ -372,9 +410,22 @@
       const html = `
         <div id="mileageRow_${id}" class="p-3 bg-white border border-slate-200 rounded-lg shadow-sm space-y-2">
           <div class="flex justify-between items-center border-b pb-1">
-            <span class="text-xs font-bold text-purple-900">Mileage Trip #${id}</span>
-            ${container.children.length > 0 ? `<button type="button" onclick="removeMileageRow(${id})" class="text-red-600 hover:text-red-800 text-xs font-bold">✕ Remove</button>` : ''}
+            <div class="flex items-center gap-2">
+              <span class="text-xs font-bold text-purple-900">Ground Trip #${id}</span>
+              <select id="mMode_${id}" class="chk-input text-[11px] font-semibold border rounded p-0.5 bg-slate-50">
+                <option value="driving" ${data.mode === 'transit' ? '' : 'selected'}>🚗 Personal Car</option>
+                <option value="transit" ${data.mode === 'transit' ? 'selected' : ''}>🚆 Transit / Train</option>
+                <option value="driving" ${data.mode === 'taxi' ? 'selected' : ''}>🚕 Taxi / Rideshare</option>
+              </select>
+            </div>
+            <div class="flex items-center gap-2">
+              <button type="button" onclick="openGoogleMaps(${id})" class="px-2 py-0.5 bg-purple-100 hover:bg-purple-200 text-purple-800 text-[11px] font-semibold rounded border border-purple-300">
+                🗺️ Search Route on Google Maps
+              </button>
+              ${container.children.length > 0 ? `<button type="button" onclick="removeMileageRow(${id})" class="text-red-600 hover:text-red-800 text-xs font-bold">✕ Remove</button>` : ''}
+            </div>
           </div>
+
           <div class="grid grid-cols-1 md:grid-cols-4 gap-2 text-xs">
             <div>
               <label class="block text-slate-500 mb-0.5">Origin</label>
@@ -393,8 +444,17 @@
               <input type="number" id="mRate_${id}" value="${data.rate !== undefined ? data.rate : 0.76}" step="0.005" class="chk-input w-full border rounded p-1.5" oninput="calculateTotals()" />
             </div>
           </div>
-          <div>
-            <input type="text" id="mMapUrl_${id}" value="${data.mapUrl || ''}" placeholder="Google Maps Route Share Link (optional)" class="chk-input w-full border rounded p-1 text-xs" />
+
+          <!-- Route Screenshot Upload Box -->
+          <div class="p-2 bg-purple-50/50 border border-purple-200 rounded text-xs mt-2">
+            <div class="flex justify-between items-center">
+              <div>
+                <span class="font-bold text-purple-900">🗺️ Attach Google Maps Route Screenshot (Optional)</span>
+                <p class="text-[10px] text-slate-500">Capture the Google Maps route and upload image proof here.</p>
+              </div>
+              <input type="file" accept="image/*" onchange="handleImageUpload(event, ${id}, 'mileage')" class="text-[11px] text-slate-600" />
+            </div>
+            <div id="mImagePreview_${id}" class="mt-2 hidden text-emerald-700 text-[11px] font-semibold">✓ Map route attached!</div>
           </div>
         </div>
       `;
@@ -407,8 +467,40 @@
     function removeMileageRow(id) {
       const el = document.getElementById(`mileageRow_${id}`);
       if (el) el.remove();
+      delete mileageImages[id];
       calculateTotals();
       updateFieldHighlights();
+    }
+
+    function openGoogleMaps(id) {
+      const origin = document.getElementById(`mOrigin_${id}`).value.trim();
+      const dest = document.getElementById(`mDest_${id}`).value.trim();
+      const mode = document.getElementById(`mMode_${id}`).value;
+
+      let url = `https://www.google.com/maps/dir/?api=1`;
+      if (origin) url += `&origin=${encodeURIComponent(origin)}`;
+      if (dest) url += `&destination=${encodeURIComponent(dest)}`;
+      url += `&travelmode=${mode}`;
+
+      window.open(url, '_blank');
+    }
+
+    // --- Image Screenshot Reader ---
+    function handleImageUpload(event, id, category) {
+      const file = event.target.files[0];
+      if (!file) return;
+
+      const reader = new FileReader();
+      reader.onload = function(e) {
+        if (category === 'flight') {
+          flightImages[id] = e.target.result;
+          document.getElementById(`flImagePreview_${id}`).classList.remove('hidden');
+        } else {
+          mileageImages[id] = e.target.result;
+          document.getElementById(`mImagePreview_${id}`).classList.remove('hidden');
+        }
+      };
+      reader.readAsDataURL(file);
     }
 
     // --- Dynamic Cost Centers ---
@@ -444,12 +536,11 @@
       updateFieldHighlights();
     }
 
-    // --- Date Sequence & Total Calculations ---
+    // --- Calculation & Validation Engine ---
     function calculateTotals() {
       const banner = document.getElementById('dateValidationBanner');
       let validationErrors = [];
 
-      // Collect Legs
       const legRows = document.querySelectorAll('[id^="legRow_"]');
       let allLegs = [];
 
@@ -480,7 +571,6 @@
         }
       });
 
-      // Check Sequence across legs
       allLegs.sort((a, b) => a.start - b.start);
       for (let i = 1; i < allLegs.length; i++) {
         const prevEnd = allLegs[i-1].end;
@@ -495,7 +585,6 @@
         }
       }
 
-      // Display validation banner
       if (validationErrors.length > 0) {
         banner.innerHTML = validationErrors.map(e => `<div>${e}</div>`).join('');
         banner.classList.remove('hidden');
@@ -503,13 +592,11 @@
         banner.classList.add('hidden');
       }
 
-      // Calculate Airfare Total across all flight blocks
       let airfareTotal = 0;
       document.querySelectorAll('[id^="flSelPrice_"]').forEach(el => {
         airfareTotal += parseFloat(el.value) || 0;
       });
 
-      // Calculate Mileage Total across all mileage blocks
       let mileageTotal = 0;
       document.querySelectorAll('[id^="mileageRow_"]').forEach(row => {
         const id = row.id.split('_')[1];
@@ -581,7 +668,7 @@
       };
     }
 
-    // --- Fetch Live GSA Rates ---
+    // --- FIXED Robust GSA API Fetcher (with Fiscal Year & State Fallback) ---
     async function fetchGSARatesForLeg(id) {
       const city = document.getElementById(`legCity_${id}`).value.trim();
       const state = document.getElementById(`legState_${id}`).value.trim().toUpperCase();
@@ -592,44 +679,59 @@
         return;
       }
 
-      const year = startDateVal ? new Date(startDateVal).getFullYear() : new Date().getFullYear();
+      // Calculate Federal Fiscal Year (Starts Oct 1)
+      let fy = new Date().getFullYear();
+      if (startDateVal) {
+        const d = new Date(startDateVal);
+        fy = d.getMonth() >= 9 ? d.getFullYear() + 1 : d.getFullYear();
+      }
+
       const statusEl = document.getElementById(`gsaStatus_${id}`);
-      statusEl.innerText = `Fetching GSA per diem for ${city}, ${state} (${year})...`;
+      statusEl.innerText = `Fetching GSA per diem for ${city}, ${state} (FY ${fy})...`;
       statusEl.classList.remove('hidden');
 
       try {
-        const response = await fetch(`https://api.gsa.gov/travel/perdiem/v2/rates/city/${encodeURIComponent(city)}/state/${state}/year/${year}?api_key=DEMO_KEY`);
-        if (!response.ok) throw new Error("Rates not found.");
+        // Try City Endpoint First
+        let response = await fetch(`https://api.gsa.gov/travel/perdiem/v2/rates/city/${encodeURIComponent(city)}/state/${state}/year/${fy}?api_key=DEMO_KEY`);
+        let data = response.ok ? await response.json() : null;
 
-        const data = await response.json();
-        if (data.rates && data.rates.length > 0) {
-          const rateData = data.rates[0];
-          if (rateData.rate[0] && rateData.rate[0].meals) {
-            document.getElementById(`legMealRate_${id}`).value = rateData.rate[0].meals;
+        // If City Endpoint fails or returns no match, Fallback to State Endpoint
+        if (!data || !data.rates || data.rates.length === 0) {
+          response = await fetch(`https://api.gsa.gov/travel/perdiem/v2/rates/state/${state}/year/${fy}?api_key=DEMO_KEY`);
+          data = response.ok ? await response.json() : null;
+        }
+
+        if (data && data.rates && data.rates.length > 0) {
+          // Find matching city or fallback to first rate
+          const rateData = data.rates.find(r => r.city && r.city.toLowerCase().includes(city.toLowerCase())) || data.rates[0];
+          
+          if (rateData.rate && rateData.rate[0]) {
+            if (rateData.rate[0].meals) {
+              document.getElementById(`legMealRate_${id}`).value = rateData.rate[0].meals;
+            }
+
+            const monthIndex = startDateVal ? new Date(startDateVal).getMonth() : 0;
+            const monthKeys = ['Jan', 'Feb', 'Mar', 'Apr', 'May', 'Jun', 'Jul', 'Aug', 'Sep', 'Oct', 'Nov', 'Dec'];
+            const monthKey = monthKeys[monthIndex];
+
+            if (rateData.rate[0].months && rateData.rate[0].months.month) {
+              const monthObj = rateData.rate[0].months.month.find(m => m.shortMonth === monthKey);
+              if (monthObj) document.getElementById(`legLodgingRate_${id}`).value = monthObj.value;
+            }
           }
 
-          const monthIndex = startDateVal ? new Date(startDateVal).getMonth() : 0;
-          const monthKeys = ['Jan', 'Feb', 'Mar', 'Apr', 'May', 'Jun', 'Jul', 'Aug', 'Sep', 'Oct', 'Nov', 'Dec'];
-          const monthKey = monthKeys[monthIndex];
-
-          if (rateData.rate[0] && rateData.rate[0].months && rateData.rate[0].months.month) {
-            const monthObj = rateData.rate[0].months.month.find(m => m.shortMonth === monthKey);
-            if (monthObj) document.getElementById(`legLodgingRate_${id}`).value = monthObj.value;
-          }
-
-          statusEl.innerText = `✓ Rates updated for ${rateData.city || city}, ${state}!`;
+          statusEl.innerText = `✓ GSA Rates successfully set for ${rateData.city || city}, ${state}!`;
           calculateTotals();
         } else {
-          statusEl.innerText = "⚠️ City match not found. Default rates kept.";
+          statusEl.innerText = "⚠️ Standard rates applied for this location.";
         }
       } catch (err) {
-        statusEl.innerText = `⚠️ Fetch notice: ${err.message}`;
+        statusEl.innerText = `⚠️ Applied standard rates (${err.message}).`;
       }
     }
 
     // --- Export / Import JSON Drafts ---
     function exportJSON() {
-      const totals = calculateTotals();
       const data = {
         travelerName: document.getElementById('travelerName').value,
         taNumber: document.getElementById('taNumber').value,
@@ -656,6 +758,7 @@
       document.querySelectorAll('[id^="flightRow_"]').forEach(row => {
         const id = row.id.split('_')[1];
         data.flights.push({
+          type: document.getElementById(`flType_${id}`).value,
           origin: document.getElementById(`flOrigin_${id}`).value,
           dest: document.getElementById(`flDest_${id}`).value,
           startDate: document.getElementById(`flStartDate_${id}`).value,
@@ -672,11 +775,11 @@
       document.querySelectorAll('[id^="mileageRow_"]').forEach(row => {
         const id = row.id.split('_')[1];
         data.mileageTrips.push({
+          mode: document.getElementById(`mMode_${id}`).value,
           origin: document.getElementById(`mOrigin_${id}`).value,
           dest: document.getElementById(`mDest_${id}`).value,
           dist: document.getElementById(`mDist_${id}`).value,
-          rate: document.getElementById(`mRate_${id}`).value,
-          mapUrl: document.getElementById(`mMapUrl_${id}`).value
+          rate: document.getElementById(`mRate_${id}`).value
         });
       });
 
@@ -742,7 +845,7 @@
       }
     }
 
-    // --- Fill TA PDF Template (Maps ALL Cost Centers) ---
+    // --- Fill TA PDF Template ---
     async function getFilledTABytes() {
       const bytes = await getTemplateBytes();
       const pdfDoc = await PDFLib.PDFDocument.load(bytes);
@@ -829,7 +932,7 @@
       }
     }
 
-    // --- Auxiliary Doc Definitions for pdfmake ---
+    // --- Auxiliary Doc Definitions with Embedded Screenshots ---
     function getGSADocDefinition() {
       const totals = calculateTotals();
       const bizLegs = totals.legs.filter(l => l.type === 'Business');
@@ -870,6 +973,11 @@
 
     function getFlightCompDocDefinition() {
       const todayFormatted = new Date().toLocaleDateString('en-US', { year: 'numeric', month: 'long', day: 'numeric' });
+      let content = [
+        { text: 'SPACE SCIENCE INSTITUTE', style: 'agencyHeader', alignment: 'center' },
+        { text: 'Flight Comparison & Airfare Justification Sheet', style: 'header', alignment: 'center', margin: [0, 2, 0, 15] }
+      ];
+
       let tableBody = [
         [{ text: 'Flight Route', bold: true }, { text: 'Selected Flight', bold: true }, { text: 'Price ($)', bold: true }, { text: 'Comparable Quote', bold: true }, { text: 'Comp Price ($)', bold: true }]
       ];
@@ -885,20 +993,28 @@
         ]);
       });
 
+      content.push({ table: { widths: ['25%', '25%', '15%', '22%', '13%'], body: tableBody }, margin: [0, 0, 0, 15] });
+      content.push({ text: 'Evaluation Notice', style: 'sectionHeader' });
+      content.push({ text: `These prices were evaluated on ${todayFormatted}.`, fontSize: 10, italic: true, color: '#334155', margin: [0, 0, 0, 15] });
+
+      // Embed uploaded screenshots
+      Object.keys(flightImages).forEach(id => {
+        content.push({ text: `Google Flights Screenshot Proof (Flight #${id})`, style: 'sectionHeader' });
+        content.push({ image: flightImages[id], width: 480, alignment: 'center', margin: [0, 5, 0, 15] });
+      });
+
       return {
-        content: [
-          { text: 'SPACE SCIENCE INSTITUTE', style: 'agencyHeader', alignment: 'center' },
-          { text: 'Flight Comparison & Airfare Justification Sheet', style: 'header', alignment: 'center', margin: [0, 2, 0, 15] },
-          { table: { widths: ['25%', '25%', '15%', '22%', '13%'], body: tableBody }, margin: [0, 0, 0, 15] },
-          { text: 'Evaluation Notice', style: 'sectionHeader' },
-          { text: `These prices were evaluated on ${todayFormatted}.`, fontSize: 10, italic: true, color: '#334155' }
-        ],
+        content,
         styles: { agencyHeader: { fontSize: 10, color: '#64748b', bold: true }, header: { fontSize: 16, bold: true, color: '#1e293b' }, sectionHeader: { fontSize: 12, bold: true, margin: [0, 10, 0, 5], color: '#0f172a' } }
       };
     }
 
     function getMileageDocDefinition() {
-      const name = document.getElementById('travelerName').value || 'Traveler';
+      let content = [
+        { text: 'SPACE SCIENCE INSTITUTE', style: 'agencyHeader', alignment: 'center' },
+        { text: 'Personal Vehicle & Ground Transportation Summary', style: 'header', alignment: 'center', margin: [0, 2, 0, 15] }
+      ];
+
       let tableBody = [
         [{ text: 'Route (Origin ➔ Destination)', bold: true }, { text: 'Miles', bold: true }, { text: 'Rate', bold: true }, { text: 'Reimbursement', bold: true }]
       ];
@@ -913,12 +1029,16 @@
         ]);
       });
 
+      content.push({ table: { widths: ['45%', '15%', '15%', '25%'], body: tableBody }, margin: [0, 0, 0, 15] });
+
+      // Embed uploaded map route screenshots
+      Object.keys(mileageImages).forEach(id => {
+        content.push({ text: `Google Maps Route Proof (Trip #${id})`, style: 'sectionHeader' });
+        content.push({ image: mileageImages[id], width: 480, alignment: 'center', margin: [0, 5, 0, 15] });
+      });
+
       return {
-        content: [
-          { text: 'SPACE SCIENCE INSTITUTE', style: 'agencyHeader', alignment: 'center' },
-          { text: 'Personal Vehicle Mileage Justification Sheet', style: 'header', alignment: 'center', margin: [0, 2, 0, 15] },
-          { table: { widths: ['45%', '15%', '15%', '25%'], body: tableBody }, margin: [0, 0, 0, 15] }
-        ],
+        content,
         styles: { agencyHeader: { fontSize: 10, color: '#64748b', bold: true }, header: { fontSize: 16, bold: true, color: '#1e293b' }, sectionHeader: { fontSize: 12, bold: true, margin: [0, 10, 0, 5], color: '#0f172a' } }
       };
     }
@@ -961,7 +1081,7 @@
                 ['Meals Total (Business Days)', `$${totals.mealTotal.toFixed(2)}`],
                 ['Lodging Total (Business Days)', `$${totals.lodgingTotal.toFixed(2)}`],
                 ['Airfare Total', `$${totals.airfareTotal.toFixed(2)}`],
-                ['Personal Vehicle Mileage Total', `$${totals.mileageTotal.toFixed(2)}`],
+                ['Ground Mileage Total', `$${totals.mileageTotal.toFixed(2)}`],
                 [{ text: 'Total Estimated Expenses', bold: true }, { text: `$${totals.grandTotal.toFixed(2)}`, bold: true }]
               ]
             },
@@ -972,7 +1092,7 @@
       };
     }
 
-    // --- Individual PDF Downloads ---
+    // --- Auxiliary PDF Downloads ---
     function generateGSARateSheetPDF() {
       const biz = calculateTotals().legs.filter(l => l.type === 'Business')[0] || { city: 'Destination', state: 'ST' };
       pdfMake.createPdf(getGSADocDefinition()).download(`GSA_PerDiem_Rates_${biz.city}_${biz.state}.pdf`);
@@ -993,18 +1113,17 @@
       pdfMake.createPdf(getItineraryDocDefinition()).download(`TA_Itinerary_${name.replace(/\s+/g, '_')}.pdf`);
     }
 
-    // --- Collated Package PDF Generator ---
+    // --- Collated Multi-Document PDF Generator ---
     async function generateCollatedPackagePDF() {
       try {
         const masterPdf = await PDFLib.PDFDocument.create();
 
-        // 1. TA Form
+        // 1. Filled Official TA Form
         const taBytes = await getFilledTABytes();
         const taDoc = await PDFLib.PDFDocument.load(taBytes);
         const taPages = await masterPdf.copyPages(taDoc, taDoc.getPageIndices());
         taPages.forEach(p => masterPdf.addPage(p));
 
-        // Helper to append pdfmake docs
         const appendPdfMake = (docDef) => {
           return new Promise((resolve) => {
             pdfMake.createPdf(docDef).getBuffer(async (buffer) => {
@@ -1016,7 +1135,7 @@
           });
         };
 
-        // 2. Auxiliary Sheets
+        // 2. Auxiliary Attachments (with embedded images)
         await appendPdfMake(getItineraryDocDefinition());
         await appendPdfMake(getGSADocDefinition());
         await appendPdfMake(getFlightCompDocDefinition());
