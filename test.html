@@ -7,17 +7,20 @@
 
   <!-- Tailwind CSS -->
   <script src="https://cdn.tailwindcss.com"></script>
-  <!-- pdf-lib for filling existing AcroForm PDFs -->
+  <!-- pdf-lib for filling AcroForms and merging PDFs -->
   <script src="https://unpkg.com/pdf-lib@1.17.1/dist/pdf-lib.min.js"></script>
-  <!-- pdfmake for generating new PDF documents -->
+  <!-- pdfmake for generating auxiliary PDFs -->
   <script src="https://cdnjs.cloudflare.com/ajax/libs/pdfmake/0.2.7/pdfmake.min.js"></script>
   <script src="https://cdnjs.cloudflare.com/ajax/libs/pdfmake/0.2.7/vfs_fonts.js"></script>
   
   <style>
-    /* Visual Checklist: Highlight empty inputs with soft pink */
     .field-empty {
-      background-color: #fdf2f8 !important; /* Tailwind pink-50 */
-      border-color: #f472b6 !important;     /* Tailwind pink-400 */
+      background-color: #fdf2f8 !important; /* Soft pink */
+      border-color: #f472b6 !important;
+    }
+    .field-invalid {
+      background-color: #fef2f2 !important; /* Soft red */
+      border-color: #f87171 !important;
     }
   </style>
 </head>
@@ -41,9 +44,12 @@
       </div>
     </header>
 
+    <!-- Date Mismatch Validation Warning Banner -->
+    <div id="dateValidationBanner" class="hidden mb-6 p-4 bg-red-50 border border-red-300 text-red-800 rounded-lg text-xs font-medium space-y-1"></div>
+
     <form id="taForm" class="space-y-6" onsubmit="event.preventDefault();">
       
-      <!-- 1. General Traveler Information -->
+      <!-- 1. Traveler Info -->
       <section>
         <h2 class="text-lg font-semibold text-slate-700 mb-3 border-b pb-1">1. Traveler Info & TA Number</h2>
         <div class="grid grid-cols-1 md:grid-cols-3 gap-4">
@@ -67,14 +73,13 @@
         <div class="flex justify-between items-center mb-3">
           <div>
             <h2 class="text-md font-semibold text-slate-800">2. Trip Legs & Destination Itinerary</h2>
-            <p class="text-xs text-slate-500">Add consecutive trip legs. Per diem is automatically set to $0 for Personal legs.</p>
+            <p class="text-xs text-slate-500">Add consecutive trip legs. Dates are checked dynamically for overlaps or gaps.</p>
           </div>
           <button type="button" onclick="addLegRow()" class="px-3 py-1 bg-emerald-600 hover:bg-emerald-700 text-white rounded text-xs font-semibold shadow">
             ➕ Add Trip Leg
           </button>
         </div>
 
-        <!-- Dynamic Leg Rows Container -->
         <div id="legsContainer" class="space-y-3"></div>
 
         <!-- Calculated Totals Banner -->
@@ -83,87 +88,71 @@
           <div>Business Days: <span id="calcBizDays" class="font-bold text-slate-900">0</span></div>
           <div>Meals Total: $<span id="calcMeals" class="font-bold text-slate-900">0.00</span></div>
           <div>Lodging Total: $<span id="calcLodging" class="font-bold text-slate-900">0.00</span></div>
+          <div>Airfare Total: $<span id="calcAirfareTotal" class="font-bold text-slate-900">0.00</span></div>
           <div>Mileage Total: $<span id="calcMileageTotal" class="font-bold text-slate-900">0.00</span></div>
           <div>Grand Total: $<span id="calcGrandTotal" class="font-bold text-blue-700">0.00</span></div>
         </div>
       </section>
 
-      <!-- 3. Flight Quotes & Comparisons -->
+      <!-- 3. Multi-Flight Comparisons -->
       <section class="border p-4 rounded-lg bg-white border-slate-200">
-        <h2 class="text-md font-semibold text-slate-800 mb-2">3. Flight Quotes & Comparisons (Google Flights)</h2>
-        <div class="grid grid-cols-1 md:grid-cols-2 gap-4">
-          <div class="bg-blue-50/50 p-3 rounded border border-blue-100">
-            <h3 class="text-xs font-bold text-blue-900 mb-2">Primary / Selected Flight</h3>
-            <div class="space-y-2">
-              <input type="text" id="flightSelectedCarrier" placeholder="Airline & Flight # (e.g. United #1420)" class="chk-input w-full border rounded p-1.5 text-xs" />
-              <input type="number" id="airfareTotal" placeholder="Price ($)" step="0.01" class="chk-input w-full border rounded p-1.5 text-xs" />
-              <input type="text" id="flightSelectedNotes" placeholder="Notes (e.g. Lowest logical non-stop fare)" class="chk-input w-full border rounded p-1.5 text-xs" />
-            </div>
+        <div class="flex justify-between items-center mb-3">
+          <div>
+            <h2 class="text-md font-semibold text-slate-800">3. Flight Quotes & Comparisons</h2>
+            <p class="text-xs text-slate-500">Document baseline flights vs. comparable quotes.</p>
           </div>
-          <div class="bg-slate-50 p-3 rounded border border-slate-200">
-            <h3 class="text-xs font-bold text-slate-700 mb-2">Comparable Alternate Quote</h3>
-            <div class="space-y-2">
-              <input type="text" id="flightCompCarrier" placeholder="Airline & Flight # (e.g. Delta #882)" class="chk-input w-full border rounded p-1.5 text-xs" />
-              <input type="number" id="flightCompPrice" placeholder="Price ($)" step="0.01" class="chk-input w-full border rounded p-1.5 text-xs" />
-              <input type="text" id="flightCompNotes" placeholder="Notes (e.g. Higher cost / multiple layovers)" class="chk-input w-full border rounded p-1.5 text-xs" />
-            </div>
-          </div>
+          <button type="button" onclick="addFlightRow()" class="px-3 py-1 bg-sky-600 hover:bg-sky-700 text-white rounded text-xs font-semibold shadow">
+            ➕ Add Flight Comparison
+          </button>
         </div>
+
+        <div id="flightsContainer" class="space-y-4"></div>
       </section>
 
-      <!-- 4. Personal Vehicle Mileage -->
+      <!-- 4. Multi-Car Vehicle Mileage -->
       <section class="border p-4 rounded-lg bg-white border-slate-200">
-        <h2 class="text-md font-semibold text-slate-800 mb-2">4. Personal Vehicle Mileage (Google Maps)</h2>
-        <div class="grid grid-cols-1 md:grid-cols-4 gap-3">
+        <div class="flex justify-between items-center mb-3">
           <div>
-            <label class="block text-xs font-semibold text-slate-600 mb-1">Origin Address</label>
-            <input type="text" id="mileageOrigin" placeholder="Boulder, CO" class="chk-input w-full border rounded p-2 text-xs" />
+            <h2 class="text-md font-semibold text-slate-800">4. Personal Vehicle Mileage Trips</h2>
+            <p class="text-xs text-slate-500">Add ground mileage legs (airport transfers, conference shuttles).</p>
           </div>
-          <div>
-            <label class="block text-xs font-semibold text-slate-600 mb-1">Destination Address</label>
-            <input type="text" id="mileageDestination" placeholder="DEN Airport" class="chk-input w-full border rounded p-2 text-xs" />
-          </div>
-          <div>
-            <label class="block text-xs font-semibold text-slate-600 mb-1">Total Roundtrip Miles</label>
-            <input type="number" id="mileageDistance" placeholder="86" step="0.1" class="chk-input w-full border rounded p-2 text-xs" />
-          </div>
-          <div>
-            <label class="block text-xs font-semibold text-slate-600 mb-1">IRS Rate ($/mile)</label>
-            <input type="number" id="mileageRate" value="0.76" step="0.005" class="chk-input w-full border rounded p-2 text-xs" />
-          </div>
+          <button type="button" onclick="addMileageRow()" class="px-3 py-1 bg-purple-600 hover:bg-purple-700 text-white rounded text-xs font-semibold shadow">
+            ➕ Add Mileage Trip
+          </button>
         </div>
-        <div class="mt-2">
-          <input type="text" id="mileageMapUrl" placeholder="Google Maps Route Share Link (optional)" class="chk-input w-full border rounded p-2 text-xs" />
-        </div>
+
+        <div id="mileageContainer" class="space-y-3"></div>
       </section>
 
       <!-- 5. Dynamic Cost Centers -->
       <section class="border p-4 rounded-lg bg-white border-slate-200">
         <div class="flex justify-between items-center mb-3">
           <div>
-            <h2 class="text-md font-semibold text-slate-800">5. Cost Center Allocation (TA Form Page 2)</h2>
-            <p class="text-xs text-slate-500">Add grant cost center numbers to cover trip funding.</p>
+            <h2 class="text-md font-semibold text-slate-800">5. Cost Center Allocations (TA Form Page 2)</h2>
+            <p class="text-xs text-slate-500">Add grant cost center numbers to cover trip funding (All rows populate Page 2).</p>
           </div>
           <button type="button" onclick="addCostCenterRow()" class="px-3 py-1 bg-indigo-600 hover:bg-indigo-700 text-white rounded text-xs font-semibold shadow">
             ➕ Add Cost Center
           </button>
         </div>
 
-        <!-- Dynamic Cost Center Container -->
         <div id="costCentersContainer" class="space-y-3"></div>
       </section>
 
       <!-- 6. TA Template Selector -->
       <section class="p-4 bg-amber-50 border border-amber-200 rounded-lg">
         <label class="block text-xs font-bold text-amber-800 mb-1">TA PDF Template File</label>
-        <p class="text-xs text-amber-700 mb-2">Ensure <code>TA_Template.pdf</code> is stored in the repository root or upload it using the input below.</p>
+        <p class="text-xs text-amber-700 mb-2">Ensure <code>TA_Template.pdf</code> is stored in the repository root or select it below.</p>
         <input type="file" id="pdfTemplateInput" accept="application/pdf" class="text-xs text-slate-600" />
       </section>
 
-      <!-- Action Download Buttons -->
+      <!-- Action Buttons -->
       <div class="flex flex-wrap gap-3 pt-4 border-t">
+        <button type="button" onclick="generateCollatedPackagePDF()" class="px-5 py-2.5 bg-emerald-700 hover:bg-emerald-800 text-white font-bold rounded-md text-sm shadow flex items-center gap-2">
+          📦 Download Collated TA Package PDF
+        </button>
         <button type="button" onclick="generateFilledTA()" class="px-4 py-2 bg-blue-600 hover:bg-blue-700 text-white font-medium rounded-md text-sm shadow">
-          📄 Download Completed TA PDF
+          📄 Download Filled TA PDF
         </button>
         <button type="button" onclick="generateGSARateSheetPDF()" class="px-4 py-2 bg-amber-600 hover:bg-amber-700 text-white font-medium rounded-md text-sm shadow">
           🌐 Download GSA Rate Sheet PDF
@@ -174,7 +163,7 @@
         <button type="button" onclick="generateMileagePDF()" class="px-4 py-2 bg-purple-600 hover:bg-purple-700 text-white font-medium rounded-md text-sm shadow">
           🚗 Download Mileage Report PDF
         </button>
-        <button type="button" onclick="generateItineraryPDF()" class="px-4 py-2 bg-emerald-600 hover:bg-emerald-700 text-white font-medium rounded-md text-sm shadow">
+        <button type="button" onclick="generateItineraryPDF()" class="px-4 py-2 bg-slate-700 hover:bg-slate-800 text-white font-medium rounded-md text-sm shadow">
           🗓️ Download Itinerary Summary PDF
         </button>
       </div>
@@ -184,9 +173,11 @@
 
   <script>
     let legCounter = 0;
+    let flightCounter = 0;
+    let mileageCounter = 0;
     let costCenterCounter = 0;
 
-    // --- Soft Pink Highlighting Checklist ---
+    // --- Soft Pink Highlighting & Validation ---
     function updateFieldHighlights() {
       const inputs = document.querySelectorAll('.chk-input');
       inputs.forEach(input => {
@@ -201,7 +192,7 @@
     document.addEventListener('input', updateFieldHighlights);
     document.addEventListener('change', updateFieldHighlights);
 
-    // --- Add / Remove Dynamic Legs ---
+    // --- Dynamic Trip Legs ---
     function addLegRow(data = {}) {
       legCounter++;
       const id = legCounter;
@@ -287,7 +278,140 @@
       calculateTotals();
     }
 
-    // --- Add / Remove Dynamic Cost Centers ---
+    // --- Dynamic Flight Comparisons ---
+    function addFlightRow(data = {}) {
+      flightCounter++;
+      const id = flightCounter;
+      const container = document.getElementById('flightsContainer');
+
+      const html = `
+        <div id="flightRow_${id}" class="border p-3 rounded bg-slate-50/50 space-y-2 relative border-slate-200">
+          <div class="flex justify-between items-center border-b pb-1">
+            <span class="text-xs font-bold text-sky-900">Flight #${id}</span>
+            <div class="flex items-center gap-3">
+              <button type="button" onclick="openGoogleFlights(${id})" class="px-2 py-0.5 bg-sky-100 hover:bg-sky-200 text-sky-800 text-[11px] font-semibold rounded border border-sky-300">
+                🔍 Search on Google Flights
+              </button>
+              ${container.children.length > 0 ? `<button type="button" onclick="removeFlightRow(${id})" class="text-red-600 hover:text-red-800 text-xs font-bold">✕ Remove</button>` : ''}
+            </div>
+          </div>
+
+          <div class="grid grid-cols-1 md:grid-cols-4 gap-2 text-xs">
+            <div>
+              <label class="block text-slate-500 mb-0.5">Origin City/Airport</label>
+              <input type="text" id="flOrigin_${id}" value="${data.origin || ''}" placeholder="DEN" class="chk-input w-full border rounded p-1.5" />
+            </div>
+            <div>
+              <label class="block text-slate-500 mb-0.5">Destination City/Airport</label>
+              <input type="text" id="flDest_${id}" value="${data.dest || ''}" placeholder="SFO" class="chk-input w-full border rounded p-1.5" />
+            </div>
+            <div>
+              <label class="block text-slate-500 mb-0.5">Outbound Date</label>
+              <input type="date" id="flStartDate_${id}" value="${data.startDate || ''}" class="chk-input w-full border rounded p-1.5" />
+            </div>
+            <div>
+              <label class="block text-slate-500 mb-0.5">Return Date</label>
+              <input type="date" id="flEndDate_${id}" value="${data.endDate || ''}" class="chk-input w-full border rounded p-1.5" />
+            </div>
+          </div>
+
+          <div class="grid grid-cols-1 md:grid-cols-2 gap-3 pt-1">
+            <div class="bg-blue-50/60 p-2 rounded border border-blue-100">
+              <h4 class="text-[11px] font-bold text-blue-900 mb-1">Selected Primary Flight</h4>
+              <div class="space-y-1.5 text-xs">
+                <input type="text" id="flSelCarrier_${id}" value="${data.selCarrier || ''}" placeholder="Airline & Flight # (e.g. United #1420)" class="chk-input w-full border rounded p-1" />
+                <input type="number" id="flSelPrice_${id}" value="${data.selPrice || ''}" placeholder="Price ($)" step="0.01" class="chk-input w-full border rounded p-1" oninput="calculateTotals()" />
+                <input type="text" id="flSelNotes_${id}" value="${data.selNotes || ''}" placeholder="Notes (e.g. Lowest logical non-stop fare)" class="chk-input w-full border rounded p-1" />
+              </div>
+            </div>
+            <div class="bg-slate-100 p-2 rounded border border-slate-200">
+              <h4 class="text-[11px] font-bold text-slate-700 mb-1">Comparable Alternate Quote</h4>
+              <div class="space-y-1.5 text-xs">
+                <input type="text" id="flCompCarrier_${id}" value="${data.compCarrier || ''}" placeholder="Airline & Flight # (e.g. Delta #882)" class="chk-input w-full border rounded p-1" />
+                <input type="number" id="flCompPrice_${id}" value="${data.compPrice || ''}" placeholder="Price ($)" step="0.01" class="chk-input w-full border rounded p-1" />
+                <input type="text" id="flCompNotes_${id}" value="${data.compNotes || ''}" placeholder="Notes (e.g. Higher cost / layovers)" class="chk-input w-full border rounded p-1" />
+              </div>
+            </div>
+          </div>
+        </div>
+      `;
+
+      container.insertAdjacentHTML('beforeend', html);
+      updateFieldHighlights();
+      calculateTotals();
+    }
+
+    function removeFlightRow(id) {
+      const el = document.getElementById(`flightRow_${id}`);
+      if (el) el.remove();
+      calculateTotals();
+      updateFieldHighlights();
+    }
+
+    function openGoogleFlights(id) {
+      const origin = document.getElementById(`flOrigin_${id}`).value.trim();
+      const dest = document.getElementById(`flDest_${id}`).value.trim();
+      const start = document.getElementById(`flStartDate_${id}`).value;
+      const end = document.getElementById(`flEndDate_${id}`).value;
+
+      let url = `https://www.google.com/travel/flights`;
+      if (origin && dest) {
+        url += `?q=flights+from+${encodeURIComponent(origin)}+to+${encodeURIComponent(dest)}`;
+        if (start) url += `+on+${start}`;
+        if (end) url += `+return+${end}`;
+      }
+      window.open(url, '_blank');
+    }
+
+    // --- Dynamic Mileage Trips ---
+    function addMileageRow(data = {}) {
+      mileageCounter++;
+      const id = mileageCounter;
+      const container = document.getElementById('mileageContainer');
+
+      const html = `
+        <div id="mileageRow_${id}" class="p-3 bg-white border border-slate-200 rounded-lg shadow-sm space-y-2">
+          <div class="flex justify-between items-center border-b pb-1">
+            <span class="text-xs font-bold text-purple-900">Mileage Trip #${id}</span>
+            ${container.children.length > 0 ? `<button type="button" onclick="removeMileageRow(${id})" class="text-red-600 hover:text-red-800 text-xs font-bold">✕ Remove</button>` : ''}
+          </div>
+          <div class="grid grid-cols-1 md:grid-cols-4 gap-2 text-xs">
+            <div>
+              <label class="block text-slate-500 mb-0.5">Origin</label>
+              <input type="text" id="mOrigin_${id}" value="${data.origin || ''}" placeholder="Boulder, CO" class="chk-input w-full border rounded p-1.5" />
+            </div>
+            <div>
+              <label class="block text-slate-500 mb-0.5">Destination</label>
+              <input type="text" id="mDest_${id}" value="${data.dest || ''}" placeholder="DEN Airport" class="chk-input w-full border rounded p-1.5" />
+            </div>
+            <div>
+              <label class="block text-slate-500 mb-0.5">Roundtrip Miles</label>
+              <input type="number" id="mDist_${id}" value="${data.dist || ''}" placeholder="86" step="0.1" class="chk-input w-full border rounded p-1.5" oninput="calculateTotals()" />
+            </div>
+            <div>
+              <label class="block text-slate-500 mb-0.5">IRS Rate ($/mi)</label>
+              <input type="number" id="mRate_${id}" value="${data.rate !== undefined ? data.rate : 0.76}" step="0.005" class="chk-input w-full border rounded p-1.5" oninput="calculateTotals()" />
+            </div>
+          </div>
+          <div>
+            <input type="text" id="mMapUrl_${id}" value="${data.mapUrl || ''}" placeholder="Google Maps Route Share Link (optional)" class="chk-input w-full border rounded p-1 text-xs" />
+          </div>
+        </div>
+      `;
+
+      container.insertAdjacentHTML('beforeend', html);
+      updateFieldHighlights();
+      calculateTotals();
+    }
+
+    function removeMileageRow(id) {
+      const el = document.getElementById(`mileageRow_${id}`);
+      if (el) el.remove();
+      calculateTotals();
+      updateFieldHighlights();
+    }
+
+    // --- Dynamic Cost Centers ---
     function addCostCenterRow(data = {}) {
       costCenterCounter++;
       const id = costCenterCounter;
@@ -320,44 +444,91 @@
       updateFieldHighlights();
     }
 
-    // --- Multi-Leg Day-by-Day Calculation Logic ---
+    // --- Date Sequence & Total Calculations ---
     function calculateTotals() {
-      const legsContainer = document.getElementById('legsContainer');
-      const rows = legsContainer.querySelectorAll('[id^="legRow_"]');
-      
+      const banner = document.getElementById('dateValidationBanner');
+      let validationErrors = [];
+
+      // Collect Legs
+      const legRows = document.querySelectorAll('[id^="legRow_"]');
       let allLegs = [];
-      rows.forEach(row => {
+
+      legRows.forEach(row => {
         const id = row.id.split('_')[1];
         const type = document.getElementById(`legType_${id}`).value;
-        const start = document.getElementById(`legStart_${id}`).value;
-        const end = document.getElementById(`legEnd_${id}`).value;
+        const startEl = document.getElementById(`legStart_${id}`);
+        const endEl = document.getElementById(`legEnd_${id}`);
         const mealRate = parseFloat(document.getElementById(`legMealRate_${id}`).value) || 0;
         const lodgingRate = parseFloat(document.getElementById(`legLodgingRate_${id}`).value) || 0;
         const city = document.getElementById(`legCity_${id}`).value;
         const state = document.getElementById(`legState_${id}`).value;
 
-        if (start && end) {
-          allLegs.push({ id, type, start: new Date(start), end: new Date(end), mealRate, lodgingRate, city, state, startStr: start, endStr: end });
+        startEl.classList.remove('field-invalid');
+        endEl.classList.remove('field-invalid');
+
+        if (startEl.value && endEl.value) {
+          const sDate = new Date(startEl.value);
+          const eDate = new Date(endEl.value);
+
+          if (eDate < sDate) {
+            validationErrors.push(`⚠️ Leg #${id} end date (${endEl.value}) cannot precede start date (${startEl.value}).`);
+            startEl.classList.add('field-invalid');
+            endEl.classList.add('field-invalid');
+          }
+
+          allLegs.push({ id, type, start: sDate, end: eDate, mealRate, lodgingRate, city, state, startStr: startEl.value, endStr: endEl.value, startEl, endEl });
         }
       });
 
-      const airfare = parseFloat(document.getElementById('airfareTotal').value) || 0;
-      const miles = parseFloat(document.getElementById('mileageDistance').value) || 0;
-      const mileageRate = parseFloat(document.getElementById('mileageRate').value) || 0;
-      const mileageTotal = miles * mileageRate;
+      // Check Sequence across legs
+      allLegs.sort((a, b) => a.start - b.start);
+      for (let i = 1; i < allLegs.length; i++) {
+        const prevEnd = allLegs[i-1].end;
+        const currStart = allLegs[i].start;
+        const diffDays = Math.round((currStart - prevEnd) / (1000 * 60 * 60 * 24));
+
+        if (diffDays < 0) {
+          validationErrors.push(`⚠️ Leg #${allLegs[i].id} starts (${allLegs[i].startStr}) before previous Leg #${allLegs[i-1].id} ends (${allLegs[i-1].endStr}).`);
+          allLegs[i].startEl.classList.add('field-invalid');
+        } else if (diffDays > 1) {
+          validationErrors.push(`⚠️ Gap detected: ${diffDays - 1} unallocated day(s) between Leg #${allLegs[i-1].id} (${allLegs[i-1].endStr}) and Leg #${allLegs[i].id} (${allLegs[i].startStr}).`);
+        }
+      }
+
+      // Display validation banner
+      if (validationErrors.length > 0) {
+        banner.innerHTML = validationErrors.map(e => `<div>${e}</div>`).join('');
+        banner.classList.remove('hidden');
+      } else {
+        banner.classList.add('hidden');
+      }
+
+      // Calculate Airfare Total across all flight blocks
+      let airfareTotal = 0;
+      document.querySelectorAll('[id^="flSelPrice_"]').forEach(el => {
+        airfareTotal += parseFloat(el.value) || 0;
+      });
+
+      // Calculate Mileage Total across all mileage blocks
+      let mileageTotal = 0;
+      document.querySelectorAll('[id^="mileageRow_"]').forEach(row => {
+        const id = row.id.split('_')[1];
+        const dist = parseFloat(document.getElementById(`mDist_${id}`)?.value) || 0;
+        const rate = parseFloat(document.getElementById(`mRate_${id}`)?.value) || 0;
+        mileageTotal += (dist * rate);
+      });
 
       if (allLegs.length === 0) {
         document.getElementById('calcDays').innerText = "0";
         document.getElementById('calcBizDays').innerText = "0";
         document.getElementById('calcMeals').innerText = "0.00";
         document.getElementById('calcLodging').innerText = "0.00";
+        document.getElementById('calcAirfareTotal').innerText = airfareTotal.toFixed(2);
         document.getElementById('calcMileageTotal').innerText = mileageTotal.toFixed(2);
-        document.getElementById('calcGrandTotal').innerText = (airfare + mileageTotal).toFixed(2);
-        return { totalDays: 0, bizDays: 0, mealTotal: 0, lodgingTotal: 0, mileageTotal, grandTotal: airfare + mileageTotal, overallStart: '', overallEnd: '', legs: allLegs };
+        document.getElementById('calcGrandTotal').innerText = (airfareTotal + mileageTotal).toFixed(2);
+        return { totalDays: 0, bizDays: 0, mealTotal: 0, lodgingTotal: 0, airfareTotal, mileageTotal, grandTotal: airfareTotal + mileageTotal, overallStart: '', overallEnd: '', legs: allLegs };
       }
 
-      // Find overall trip date boundaries
-      allLegs.sort((a, b) => a.start - b.start);
       const overallStart = allLegs[0].start;
       const overallEnd = new Date(Math.max(...allLegs.map(l => l.end)));
 
@@ -366,7 +537,6 @@
       let mealTotal = 0;
       let lodgingTotal = 0;
 
-      // Day-by-day iteration
       let current = new Date(overallStart);
       const totalSpanDays = Math.round((overallEnd - overallStart) / (1000 * 60 * 60 * 24)) + 1;
 
@@ -376,11 +546,9 @@
 
         if (activeLeg && activeLeg.type === 'Business') {
           bizDays++;
-          // Apply 75% rule on Day 1 and Last Day of overall trip
           const isFirstOrLastDay = (dayIdx === 0 || dayIdx === totalSpanDays - 1);
           mealTotal += activeLeg.mealRate * (isFirstOrLastDay ? 0.75 : 1.0);
 
-          // Lodging for business nights (excluding final travel day)
           if (dayIdx < totalSpanDays - 1) {
             lodgingTotal += activeLeg.lodgingRate;
           }
@@ -389,12 +557,13 @@
         current.setDate(current.getDate() + 1);
       }
 
-      const grandTotal = mealTotal + lodgingTotal + airfare + mileageTotal;
+      const grandTotal = mealTotal + lodgingTotal + airfareTotal + mileageTotal;
 
       document.getElementById('calcDays').innerText = totalDays;
       document.getElementById('calcBizDays').innerText = bizDays;
       document.getElementById('calcMeals').innerText = mealTotal.toFixed(2);
       document.getElementById('calcLodging').innerText = lodgingTotal.toFixed(2);
+      document.getElementById('calcAirfareTotal').innerText = airfareTotal.toFixed(2);
       document.getElementById('calcMileageTotal').innerText = mileageTotal.toFixed(2);
       document.getElementById('calcGrandTotal').innerText = grandTotal.toFixed(2);
 
@@ -403,6 +572,7 @@
         bizDays,
         mealTotal,
         lodgingTotal,
+        airfareTotal,
         mileageTotal,
         grandTotal,
         overallStart: allLegs[0].startStr,
@@ -411,11 +581,7 @@
       };
     }
 
-    ['airfareTotal', 'mileageDistance', 'mileageRate'].forEach(id => {
-      document.getElementById(id).addEventListener('input', calculateTotals);
-    });
-
-    // --- Fetch GSA Per Diem Rates for Specific Leg ---
+    // --- Fetch Live GSA Rates ---
     async function fetchGSARatesForLeg(id) {
       const city = document.getElementById(`legCity_${id}`).value.trim();
       const state = document.getElementById(`legState_${id}`).value.trim().toUpperCase();
@@ -468,22 +634,12 @@
         travelerName: document.getElementById('travelerName').value,
         taNumber: document.getElementById('taNumber').value,
         businessPurpose: document.getElementById('businessPurpose').value,
-        airfareTotal: document.getElementById('airfareTotal').value,
-        flightSelectedCarrier: document.getElementById('flightSelectedCarrier').value,
-        flightSelectedNotes: document.getElementById('flightSelectedNotes').value,
-        flightCompCarrier: document.getElementById('flightCompCarrier').value,
-        flightCompPrice: document.getElementById('flightCompPrice').value,
-        flightCompNotes: document.getElementById('flightCompNotes').value,
-        mileageOrigin: document.getElementById('mileageOrigin').value,
-        mileageDestination: document.getElementById('mileageDestination').value,
-        mileageDistance: document.getElementById('mileageDistance').value,
-        mileageRate: document.getElementById('mileageRate').value,
-        mileageMapUrl: document.getElementById('mileageMapUrl').value,
         legs: [],
+        flights: [],
+        mileageTrips: [],
         costCenters: []
       };
 
-      // Collect Dynamic Legs
       document.querySelectorAll('[id^="legRow_"]').forEach(row => {
         const id = row.id.split('_')[1];
         data.legs.push({
@@ -497,7 +653,33 @@
         });
       });
 
-      // Collect Dynamic Cost Centers
+      document.querySelectorAll('[id^="flightRow_"]').forEach(row => {
+        const id = row.id.split('_')[1];
+        data.flights.push({
+          origin: document.getElementById(`flOrigin_${id}`).value,
+          dest: document.getElementById(`flDest_${id}`).value,
+          startDate: document.getElementById(`flStartDate_${id}`).value,
+          endDate: document.getElementById(`flEndDate_${id}`).value,
+          selCarrier: document.getElementById(`flSelCarrier_${id}`).value,
+          selPrice: document.getElementById(`flSelPrice_${id}`).value,
+          selNotes: document.getElementById(`flSelNotes_${id}`).value,
+          compCarrier: document.getElementById(`flCompCarrier_${id}`).value,
+          compPrice: document.getElementById(`flCompPrice_${id}`).value,
+          compNotes: document.getElementById(`flCompNotes_${id}`).value
+        });
+      });
+
+      document.querySelectorAll('[id^="mileageRow_"]').forEach(row => {
+        const id = row.id.split('_')[1];
+        data.mileageTrips.push({
+          origin: document.getElementById(`mOrigin_${id}`).value,
+          dest: document.getElementById(`mDest_${id}`).value,
+          dist: document.getElementById(`mDist_${id}`).value,
+          rate: document.getElementById(`mRate_${id}`).value,
+          mapUrl: document.getElementById(`mMapUrl_${id}`).value
+        });
+      });
+
       document.querySelectorAll('[id^="costCenterRow_"]').forEach(row => {
         const id = row.id.split('_')[1];
         data.costCenters.push({
@@ -524,29 +706,20 @@
         try {
           const data = JSON.parse(e.target.result);
 
-          // Clear existing dynamic rows
           document.getElementById('legsContainer').innerHTML = '';
+          document.getElementById('flightsContainer').innerHTML = '';
+          document.getElementById('mileageContainer').innerHTML = '';
           document.getElementById('costCentersContainer').innerHTML = '';
 
-          // Populate static fields
           Object.keys(data).forEach(key => {
             const el = document.getElementById(key);
             if (el && typeof data[key] !== 'object') el.value = data[key];
           });
 
-          // Rebuild legs
-          if (data.legs && data.legs.length > 0) {
-            data.legs.forEach(leg => addLegRow(leg));
-          } else {
-            addLegRow();
-          }
-
-          // Rebuild cost centers
-          if (data.costCenters && data.costCenters.length > 0) {
-            data.costCenters.forEach(cc => addCostCenterRow(cc));
-          } else {
-            addCostCenterRow();
-          }
+          if (data.legs && data.legs.length) data.legs.forEach(l => addLegRow(l)); else addLegRow();
+          if (data.flights && data.flights.length) data.flights.forEach(f => addFlightRow(f)); else addFlightRow();
+          if (data.mileageTrips && data.mileageTrips.length) data.mileageTrips.forEach(m => addMileageRow(m)); else addMileageRow();
+          if (data.costCenters && data.costCenters.length) data.costCenters.forEach(c => addCostCenterRow(c)); else addCostCenterRow();
 
           calculateTotals();
           updateFieldHighlights();
@@ -564,106 +737,111 @@
         return await fileInput.files[0].arrayBuffer();
       } else {
         const response = await fetch('./TA_Template.pdf');
-        if (!response.ok) throw new Error("Could not load TA_Template.pdf. Upload your PDF template.");
+        if (!response.ok) throw new Error("Could not load TA_Template.pdf.");
         return await response.arrayBuffer();
       }
     }
 
-    // --- Fill AcroForm TA PDF ---
+    // --- Fill TA PDF Template (Maps ALL Cost Centers) ---
+    async function getFilledTABytes() {
+      const bytes = await getTemplateBytes();
+      const pdfDoc = await PDFLib.PDFDocument.load(bytes);
+      const form = pdfDoc.getForm();
+      const totals = calculateTotals();
+
+      const setField = (fieldName, val) => {
+        try {
+          const field = form.getTextField(fieldName);
+          if (field) field.setText(String(val));
+        } catch (e) {}
+      };
+
+      const todayStr = new Date().toLocaleDateString('en-US');
+      const travelerName = document.getElementById('travelerName').value || '';
+      const bizLegs = totals.legs.filter(l => l.type === 'Business');
+      const locationStr = bizLegs.map(l => `${l.city}, ${l.state}`).join('; ') || 'Various';
+
+      setField('DATE', todayStr);
+      setField('TA NUMBER', document.getElementById('taNumber').value || '');
+      setField('NAME', travelerName);
+      setField('LOCATION', locationStr);
+      setField('BUSINESS PURPOSE', document.getElementById('businessPurpose').value || '');
+
+      setField('TRAVEL PERIOD', totals.overallStart);
+      setField('to', totals.overallEnd);
+
+      setField('MEALS Per Diem', `$${bizLegs[0]?.mealRate || 0}/day (Biz Legs)`);
+      setField('DATES#0', `${totals.overallStart} - ${totals.overallEnd}`);
+      setField('Total#0', totals.mealTotal.toFixed(2));
+
+      setField('LODGING Per Diem', `$${bizLegs[0]?.lodgingRate || 0}/night (Biz Legs)`);
+      setField('DATES#1', `${totals.overallStart} - ${totals.overallEnd}`);
+      setField('Total#1', totals.lodgingTotal.toFixed(2));
+
+      setField('DATES#2', totals.overallStart);
+      setField('Total#2', totals.airfareTotal.toFixed(2));
+
+      if (totals.mileageTotal > 0) {
+        setField('PERSONAL CAR', `Reimbursement`);
+        setField('DATES#7', `${totals.overallStart} - ${totals.overallEnd}`);
+        setField('Total#7', totals.mileageTotal.toFixed(2));
+      }
+
+      setField('TOTAL#11', totals.grandTotal.toFixed(2));
+
+      // Map ALL Cost Centers on Page 2
+      const ccFields = [
+        ['COST CENTER NO', 'AMOUNT', 'DESCRIPTION'],
+        ['undefined_5', 'undefined_6', 'undefined_7'],
+        ['undefined_8', 'undefined_9', 'undefined_10'],
+        ['undefined_11', 'undefined_12', 'undefined_13']
+      ];
+
+      const ccRows = document.querySelectorAll('[id^="costCenterRow_"]');
+      ccRows.forEach((row, idx) => {
+        if (idx < ccFields.length) {
+          const id = row.id.split('_')[1];
+          const no = document.getElementById(`ccNo_${id}`)?.value || '';
+          const amt = document.getElementById(`ccAmt_${id}`)?.value || '';
+          const desc = document.getElementById(`ccDesc_${id}`)?.value || '';
+
+          setField(ccFields[idx][0], no);
+          setField(ccFields[idx][1], amt);
+          setField(ccFields[idx][2], desc);
+        }
+      });
+
+      setField('TRAVELER', travelerName);
+      return await pdfDoc.save();
+    }
+
     async function generateFilledTA() {
       try {
-        const bytes = await getTemplateBytes();
-        const pdfDoc = await PDFLib.PDFDocument.load(bytes);
-        const form = pdfDoc.getForm();
-        const totals = calculateTotals();
-
-        const setField = (fieldName, val) => {
-          try {
-            const field = form.getTextField(fieldName);
-            if (field) field.setText(String(val));
-          } catch (e) {
-            console.warn(`Field '${fieldName}' not found/editable.`);
-          }
-        };
-
-        const todayStr = new Date().toLocaleDateString('en-US');
-        const travelerName = document.getElementById('travelerName').value || '';
-
-        // Formatted Destinations list
-        const bizLegs = totals.legs.filter(l => l.type === 'Business');
-        const locationStr = bizLegs.map(l => `${l.city}, ${l.state}`).join('; ') || 'Various';
-
-        // Header Metadata
-        setField('DATE', todayStr);
-        setField('TA NUMBER', document.getElementById('taNumber').value || '');
-        setField('NAME', travelerName);
-        setField('LOCATION', locationStr);
-        setField('BUSINESS PURPOSE', document.getElementById('businessPurpose').value || '');
-
-        // Dates split into 'TRAVEL PERIOD' and 'to'
-        setField('TRAVEL PERIOD', totals.overallStart);
-        setField('to', totals.overallEnd);
-
-        // Per Diem Totals
-        setField('MEALS Per Diem', `$${bizLegs[0]?.mealRate || 0}/day (Biz Legs)`);
-        setField('DATES#0', `${totals.overallStart} - ${totals.overallEnd}`);
-        setField('Total#0', totals.mealTotal.toFixed(2));
-
-        setField('LODGING Per Diem', `$${bizLegs[0]?.lodgingRate || 0}/night (Biz Legs)`);
-        setField('DATES#1', `${totals.overallStart} - ${totals.overallEnd}`);
-        setField('Total#1', totals.lodgingTotal.toFixed(2));
-
-        setField('DATES#2', totals.overallStart);
-        setField('Total#2', (parseFloat(document.getElementById('airfareTotal').value) || 0).toFixed(2));
-
-        if (totals.mileageTotal > 0) {
-          setField('PERSONAL CAR', `$${document.getElementById('mileageRate').value}/mi`);
-          setField('DATES#7', `${totals.overallStart} - ${totals.overallEnd}`);
-          setField('Total#7', totals.mileageTotal.toFixed(2));
-        }
-
-        // Grand Total Box
-        setField('TOTAL#11', totals.grandTotal.toFixed(2));
-
-        // Page 2 - Cost Centers
-        const ccRows = document.querySelectorAll('[id^="costCenterRow_"]');
-        if (ccRows.length > 0) {
-          const firstId = ccRows[0].id.split('_')[1];
-          setField('COST CENTER NO', document.getElementById(`ccNo_${firstId}`)?.value || '');
-          setField('AMOUNT', document.getElementById(`ccAmt_${firstId}`)?.value || '');
-          setField('DESCRIPTION', document.getElementById(`ccDesc_${firstId}`)?.value || '');
-        }
-        setField('TRAVELER', travelerName);
-
-        const pdfBytes = await pdfDoc.save();
+        const pdfBytes = await getFilledTABytes();
+        const travelerName = document.getElementById('travelerName').value || 'Draft';
         const blob = new Blob([pdfBytes], { type: 'application/pdf' });
         const link = document.createElement('a');
         link.href = URL.createObjectURL(blob);
         link.download = `TA_Completed_${travelerName.replace(/\s+/g, '_')}.pdf`;
         link.click();
-
       } catch (err) {
-        alert("Error populating TA form: " + err.message);
+        alert("Error generating TA PDF: " + err.message);
       }
     }
 
-    // --- Generate Official GSA Sheet PDF ---
-    function generateGSARateSheetPDF() {
+    // --- Auxiliary Doc Definitions for pdfmake ---
+    function getGSADocDefinition() {
       const totals = calculateTotals();
       const bizLegs = totals.legs.filter(l => l.type === 'Business');
       const todayFormatted = new Date().toLocaleDateString('en-US', { year: 'numeric', month: 'long', day: 'numeric' });
 
       let tableBody = [
-        [{ text: 'Leg City/State', bold: true }, { text: 'Type', bold: true }, { text: 'Dates', bold: true }, { text: 'M&IE Rate', bold: true }, { text: 'Lodging Rate', bold: true }]
+        [{ text: 'Leg Destination', bold: true }, { text: 'Type', bold: true }, { text: 'Dates', bold: true }, { text: 'M&IE Rate', bold: true }, { text: 'Lodging Rate', bold: true }]
       ];
 
       totals.legs.forEach(leg => {
         tableBody.push([
-          `${leg.city}, ${leg.state}`,
-          leg.type,
-          `${leg.startStr} to ${leg.endStr}`,
-          `$${leg.mealRate}/day`,
-          `$${leg.lodgingRate}/night`
+          `${leg.city}, ${leg.state}`, leg.type, `${leg.startStr} to ${leg.endStr}`, `$${leg.mealRate}/day`, `$${leg.lodgingRate}/night`
         ]);
       });
 
@@ -671,126 +849,81 @@
       const year = firstBiz.startStr ? new Date(firstBiz.startStr).getFullYear() : new Date().getFullYear();
       const gsaWebUrl = `https://www.gsa.gov/travel/plan-book/per-diem-rates/per-diem-rates-results?action=perdiems_report&fiscal_year=${year}&state=${firstBiz.state}&city=${encodeURIComponent(firstBiz.city)}&zip=`;
 
-      const docDefinition = {
+      return {
         content: [
           { text: 'U.S. General Services Administration (GSA)', style: 'agencyHeader', alignment: 'center' },
           { text: `FY ${year} Per Diem Rates Breakdown`, style: 'header', alignment: 'center', margin: [0, 2, 0, 15] },
-          {
-            table: { widths: ['25%', '15%', '30%', '15%', '15%'], body: tableBody },
-            margin: [0, 0, 0, 15]
-          },
+          { table: { widths: ['25%', '15%', '30%', '15%', '15%'], body: tableBody }, margin: [0, 0, 0, 15] },
           { text: 'Documentation & Data Verification', style: 'sectionHeader' },
           {
             text: [
-              `These rates were obtained on `,
-              { text: todayFormatted, bold: true },
-              ` from the GSA Per Diem API.\n\n`,
-              `Current official rates can be verified online at the following link:\n`,
+              `These rates were obtained on `, { text: todayFormatted, bold: true }, ` from the GSA Per Diem API.\n\n`,
+              `Current official rates can be verified online at:\n`,
               { text: gsaWebUrl, link: gsaWebUrl, color: '#0284c7', decoration: 'underline' }
             ],
             fontSize: 9.5, color: '#334155', margin: [0, 5, 0, 15]
           }
         ],
-        styles: {
-          agencyHeader: { fontSize: 10, color: '#64748b', bold: true },
-          header: { fontSize: 16, bold: true, color: '#1e293b' },
-          sectionHeader: { fontSize: 12, bold: true, margin: [0, 10, 0, 5], color: '#0f172a' }
-        }
+        styles: { agencyHeader: { fontSize: 10, color: '#64748b', bold: true }, header: { fontSize: 16, bold: true, color: '#1e293b' }, sectionHeader: { fontSize: 12, bold: true, margin: [0, 10, 0, 5], color: '#0f172a' } }
       };
-
-      pdfMake.createPdf(docDefinition).download(`GSA_PerDiem_Rates_${firstBiz.city}_${firstBiz.state}.pdf`);
     }
 
-    // --- Generate Flight Evaluation PDF ---
-    function generateFlightCompPDF() {
-      const name = document.getElementById('travelerName').value || 'Traveler';
-      const carrier = document.getElementById('flightSelectedCarrier').value || 'Selected Airline';
-      const price = document.getElementById('airfareTotal').value || '0.00';
-      const notes = document.getElementById('flightSelectedNotes').value || 'N/A';
-
-      const compCarrier = document.getElementById('flightCompCarrier').value || 'Alternate Airline';
-      const compPrice = document.getElementById('flightCompPrice').value || '0.00';
-      const compNotes = document.getElementById('flightCompNotes').value || 'N/A';
-
+    function getFlightCompDocDefinition() {
       const todayFormatted = new Date().toLocaleDateString('en-US', { year: 'numeric', month: 'long', day: 'numeric' });
+      let tableBody = [
+        [{ text: 'Flight Route', bold: true }, { text: 'Selected Flight', bold: true }, { text: 'Price ($)', bold: true }, { text: 'Comparable Quote', bold: true }, { text: 'Comp Price ($)', bold: true }]
+      ];
 
-      const docDefinition = {
+      document.querySelectorAll('[id^="flightRow_"]').forEach(row => {
+        const id = row.id.split('_')[1];
+        tableBody.push([
+          `${document.getElementById(`flOrigin_${id}`)?.value || ''} ➔ ${document.getElementById(`flDest_${id}`)?.value || ''}`,
+          document.getElementById(`flSelCarrier_${id}`)?.value || 'Selected',
+          `$${parseFloat(document.getElementById(`flSelPrice_${id}`)?.value || 0).toFixed(2)}`,
+          document.getElementById(`flCompCarrier_${id}`)?.value || 'Comparable',
+          `$${parseFloat(document.getElementById(`flCompPrice_${id}`)?.value || 0).toFixed(2)}`
+        ]);
+      });
+
+      return {
         content: [
           { text: 'SPACE SCIENCE INSTITUTE', style: 'agencyHeader', alignment: 'center' },
           { text: 'Flight Comparison & Airfare Justification Sheet', style: 'header', alignment: 'center', margin: [0, 2, 0, 15] },
-          {
-            table: {
-              widths: ['25%', '25%', '20%', '30%'],
-              body: [
-                [{ text: 'Option Type', bold: true }, { text: 'Carrier / Flight #', bold: true }, { text: 'Price ($)', bold: true }, { text: 'Justification / Notes', bold: true }],
-                [{ text: 'Selected Flight', bold: true, color: '#0369a1' }, carrier, `$${parseFloat(price).toFixed(2)}`, notes],
-                [{ text: 'Comparable Quote', color: '#475569' }, compCarrier, `$${parseFloat(compPrice).toFixed(2)}`, compNotes]
-              ]
-            },
-            margin: [0, 0, 0, 15]
-          },
+          { table: { widths: ['25%', '25%', '15%', '22%', '13%'], body: tableBody }, margin: [0, 0, 0, 15] },
           { text: 'Evaluation Notice', style: 'sectionHeader' },
           { text: `These prices were evaluated on ${todayFormatted}.`, fontSize: 10, italic: true, color: '#334155' }
         ],
-        styles: {
-          agencyHeader: { fontSize: 10, color: '#64748b', bold: true },
-          header: { fontSize: 16, bold: true, color: '#1e293b' },
-          sectionHeader: { fontSize: 12, bold: true, margin: [0, 10, 0, 5], color: '#0f172a' }
-        }
+        styles: { agencyHeader: { fontSize: 10, color: '#64748b', bold: true }, header: { fontSize: 16, bold: true, color: '#1e293b' }, sectionHeader: { fontSize: 12, bold: true, margin: [0, 10, 0, 5], color: '#0f172a' } }
       };
-
-      pdfMake.createPdf(docDefinition).download(`Flight_Comparison_${name.replace(/\s+/g, '_')}.pdf`);
     }
 
-    // --- Generate Mileage PDF ---
-    function generateMileagePDF() {
+    function getMileageDocDefinition() {
       const name = document.getElementById('travelerName').value || 'Traveler';
-      const origin = document.getElementById('mileageOrigin').value || 'N/A';
-      const dest = document.getElementById('mileageDestination').value || 'N/A';
-      const dist = parseFloat(document.getElementById('mileageDistance').value) || 0;
-      const rate = parseFloat(document.getElementById('mileageRate').value) || 0;
-      const total = (dist * rate).toFixed(2);
-      const mapUrl = document.getElementById('mileageMapUrl').value;
+      let tableBody = [
+        [{ text: 'Route (Origin ➔ Destination)', bold: true }, { text: 'Miles', bold: true }, { text: 'Rate', bold: true }, { text: 'Reimbursement', bold: true }]
+      ];
 
-      const docDefinition = {
+      document.querySelectorAll('[id^="mileageRow_"]').forEach(row => {
+        const id = row.id.split('_')[1];
+        const dist = parseFloat(document.getElementById(`mDist_${id}`)?.value) || 0;
+        const rate = parseFloat(document.getElementById(`mRate_${id}`)?.value) || 0;
+        tableBody.push([
+          `${document.getElementById(`mOrigin_${id}`)?.value || ''} ➔ ${document.getElementById(`mDest_${id}`)?.value || ''}`,
+          `${dist} mi`, `$${rate.toFixed(3)}/mi`, `$${(dist * rate).toFixed(2)}`
+        ]);
+      });
+
+      return {
         content: [
           { text: 'SPACE SCIENCE INSTITUTE', style: 'agencyHeader', alignment: 'center' },
           { text: 'Personal Vehicle Mileage Justification Sheet', style: 'header', alignment: 'center', margin: [0, 2, 0, 15] },
-          {
-            table: {
-              widths: ['35%', '65%'],
-              body: [
-                [{ text: 'Traveler Name:', bold: true }, name],
-                [{ text: 'Origin Address:', bold: true }, origin],
-                [{ text: 'Destination Address:', bold: true }, dest],
-                [{ text: 'Roundtrip Miles Driven:', bold: true }, `${dist} miles`],
-                [{ text: 'IRS Standard Mileage Rate:', bold: true }, `$${rate.toFixed(3)} / mile`],
-                [{ text: 'Total Calculated Reimbursement:', bold: true }, `$${total}`]
-              ]
-            },
-            layout: 'lightHorizontalLines',
-            margin: [0, 0, 0, 15]
-          },
-          mapUrl ? {
-            text: [
-              { text: 'Google Maps Route Link:\n', bold: true },
-              { text: mapUrl, link: mapUrl, color: '#0284c7', decoration: 'underline' }
-            ],
-            fontSize: 10, margin: [0, 0, 0, 15]
-          } : {}
+          { table: { widths: ['45%', '15%', '15%', '25%'], body: tableBody }, margin: [0, 0, 0, 15] }
         ],
-        styles: {
-          agencyHeader: { fontSize: 10, color: '#64748b', bold: true },
-          header: { fontSize: 16, bold: true, color: '#1e293b' },
-          sectionHeader: { fontSize: 12, bold: true, margin: [0, 10, 0, 5], color: '#0f172a' }
-        }
+        styles: { agencyHeader: { fontSize: 10, color: '#64748b', bold: true }, header: { fontSize: 16, bold: true, color: '#1e293b' }, sectionHeader: { fontSize: 12, bold: true, margin: [0, 10, 0, 5], color: '#0f172a' } }
       };
-
-      pdfMake.createPdf(docDefinition).download(`Mileage_Report_${name.replace(/\s+/g, '_')}.pdf`);
     }
 
-    // --- Generate Itinerary PDF ---
-    function generateItineraryPDF() {
+    function getItineraryDocDefinition() {
       const totals = calculateTotals();
       const name = document.getElementById('travelerName').value || 'N/A';
       const purpose = document.getElementById('businessPurpose').value || 'N/A';
@@ -800,14 +933,10 @@
       ];
 
       totals.legs.forEach(leg => {
-        legRows.push([
-          `${leg.startStr} to ${leg.endStr}`,
-          leg.type,
-          `${leg.city}, ${leg.state}`
-        ]);
+        legRows.push([`${leg.startStr} to ${leg.endStr}`, leg.type, `${leg.city}, ${leg.state}`]);
       });
 
-      const docDefinition = {
+      return {
         content: [
           { text: 'SPACE SCIENCE INSTITUTE', style: 'header', alignment: 'center' },
           { text: 'Travel Itinerary & Summary Report', style: 'subheader', alignment: 'center', margin: [0, 2, 0, 15] },
@@ -816,18 +945,14 @@
               widths: ['30%', '70%'],
               body: [
                 [{ text: 'Traveler Name:', bold: true }, name],
-                [{ text: 'Overall Travel Period:', bold: true }, `${totals.overallStart} to ${totals.overallEnd} (${totals.totalDays} Total Days)`],
+                [{ text: 'Overall Travel Period:', bold: true }, `${totals.overallStart} to ${totals.overallEnd} (${totals.totalDays} Days)`],
                 [{ text: 'Business Purpose:', bold: true }, purpose]
               ]
             },
-            layout: 'lightHorizontalLines',
-            margin: [0, 0, 0, 15]
+            layout: 'lightHorizontalLines', margin: [0, 0, 0, 15]
           },
           { text: 'Trip Legs Breakdown', style: 'sectionHeader' },
-          {
-            table: { widths: ['35%', '25%', '40%'], body: legRows },
-            margin: [0, 5, 0, 15]
-          },
+          { table: { widths: ['35%', '25%', '40%'], body: legRows }, margin: [0, 5, 0, 15] },
           { text: 'Estimated Expense Summary', style: 'sectionHeader' },
           {
             table: {
@@ -835,7 +960,7 @@
               body: [
                 ['Meals Total (Business Days)', `$${totals.mealTotal.toFixed(2)}`],
                 ['Lodging Total (Business Days)', `$${totals.lodgingTotal.toFixed(2)}`],
-                ['Airfare Total', `$${(parseFloat(document.getElementById('airfareTotal').value) || 0).toFixed(2)}`],
+                ['Airfare Total', `$${totals.airfareTotal.toFixed(2)}`],
                 ['Personal Vehicle Mileage Total', `$${totals.mileageTotal.toFixed(2)}`],
                 [{ text: 'Total Estimated Expenses', bold: true }, { text: `$${totals.grandTotal.toFixed(2)}`, bold: true }]
               ]
@@ -843,19 +968,78 @@
             margin: [0, 5, 0, 15]
           }
         ],
-        styles: {
-          header: { fontSize: 16, bold: true },
-          subheader: { fontSize: 12, color: '#475569' },
-          sectionHeader: { fontSize: 12, bold: true, margin: [0, 10, 0, 5], color: '#1e293b' }
-        }
+        styles: { header: { fontSize: 16, bold: true }, subheader: { fontSize: 12, color: '#475569' }, sectionHeader: { fontSize: 12, bold: true, margin: [0, 10, 0, 5], color: '#1e293b' } }
       };
-
-      pdfMake.createPdf(docDefinition).download(`TA_Itinerary_${name.replace(/\s+/g, '_')}.pdf`);
     }
 
-    // Initialize with default rows on load
+    // --- Individual PDF Downloads ---
+    function generateGSARateSheetPDF() {
+      const biz = calculateTotals().legs.filter(l => l.type === 'Business')[0] || { city: 'Destination', state: 'ST' };
+      pdfMake.createPdf(getGSADocDefinition()).download(`GSA_PerDiem_Rates_${biz.city}_${biz.state}.pdf`);
+    }
+
+    function generateFlightCompPDF() {
+      const name = document.getElementById('travelerName').value || 'Traveler';
+      pdfMake.createPdf(getFlightCompDocDefinition()).download(`Flight_Comparison_${name.replace(/\s+/g, '_')}.pdf`);
+    }
+
+    function generateMileagePDF() {
+      const name = document.getElementById('travelerName').value || 'Traveler';
+      pdfMake.createPdf(getMileageDocDefinition()).download(`Mileage_Report_${name.replace(/\s+/g, '_')}.pdf`);
+    }
+
+    function generateItineraryPDF() {
+      const name = document.getElementById('travelerName').value || 'Traveler';
+      pdfMake.createPdf(getItineraryDocDefinition()).download(`TA_Itinerary_${name.replace(/\s+/g, '_')}.pdf`);
+    }
+
+    // --- Collated Package PDF Generator ---
+    async function generateCollatedPackagePDF() {
+      try {
+        const masterPdf = await PDFLib.PDFDocument.create();
+
+        // 1. TA Form
+        const taBytes = await getFilledTABytes();
+        const taDoc = await PDFLib.PDFDocument.load(taBytes);
+        const taPages = await masterPdf.copyPages(taDoc, taDoc.getPageIndices());
+        taPages.forEach(p => masterPdf.addPage(p));
+
+        // Helper to append pdfmake docs
+        const appendPdfMake = (docDef) => {
+          return new Promise((resolve) => {
+            pdfMake.createPdf(docDef).getBuffer(async (buffer) => {
+              const doc = await PDFLib.PDFDocument.load(buffer);
+              const pages = await masterPdf.copyPages(doc, doc.getPageIndices());
+              pages.forEach(p => masterPdf.addPage(p));
+              resolve();
+            });
+          });
+        };
+
+        // 2. Auxiliary Sheets
+        await appendPdfMake(getItineraryDocDefinition());
+        await appendPdfMake(getGSADocDefinition());
+        await appendPdfMake(getFlightCompDocDefinition());
+        await appendPdfMake(getMileageDocDefinition());
+
+        const mergedBytes = await masterPdf.save();
+        const name = document.getElementById('travelerName').value || 'Traveler';
+        const blob = new Blob([mergedBytes], { type: 'application/pdf' });
+        const link = document.createElement('a');
+        link.href = URL.createObjectURL(blob);
+        link.download = `Complete_TA_Package_${name.replace(/\s+/g, '_')}.pdf`;
+        link.click();
+
+      } catch (err) {
+        alert("Error generating collated package: " + err.message);
+      }
+    }
+
+    // Initialize Default Rows
     window.addEventListener('DOMContentLoaded', () => {
       addLegRow();
+      addFlightRow();
+      addMileageRow();
       addCostCenterRow();
     });
   </script>
