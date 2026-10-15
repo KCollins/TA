@@ -14,12 +14,17 @@
   <script src="https://cdnjs.cloudflare.com/ajax/libs/pdfmake/0.2.7/vfs_fonts.js"></script>
   
   <style>
+    /* Visual Checklist: Soft pink when empty, soft green when filled */
     .field-empty {
-      background-color: #fdf2f8 !important; /* Soft pink for empty checklist fields */
+      background-color: #fdf2f8 !important; /* Soft pink */
       border-color: #f472b6 !important;
     }
+    .field-filled {
+      background-color: #f0fdf4 !important; /* Soft green */
+      border-color: #86efac !important;
+    }
     .field-invalid {
-      background-color: #fef2f2 !important; /* Soft red for date sequence errors */
+      background-color: #fef2f2 !important; /* Soft red for date errors */
       border-color: #f87171 !important;
     }
   </style>
@@ -44,12 +49,12 @@
       </div>
     </header>
 
-    <!-- Date Mismatch Validation Banner -->
+    <!-- Date Validation Banner -->
     <div id="dateValidationBanner" class="hidden mb-6 p-4 bg-red-50 border border-red-300 text-red-800 rounded-lg text-xs font-medium space-y-1"></div>
 
     <form id="taForm" class="space-y-6" onsubmit="event.preventDefault();">
       
-      <!-- 1. General Traveler & Trip Details -->
+      <!-- 1. General Traveler Info -->
       <section>
         <h2 class="text-lg font-semibold text-slate-700 mb-3 border-b pb-1">1. Traveler Info & Registration Fees</h2>
         <div class="grid grid-cols-1 md:grid-cols-4 gap-4">
@@ -62,7 +67,7 @@
             <input type="text" id="taNumber" placeholder="5781" class="chk-input w-full border rounded p-2 text-sm" />
           </div>
           <div>
-            <label class="block text-xs font-semibold text-slate-600 mb-1">Business Purpose</label>
+            <label class="block text-xs font-semibold text-slate-600 mb-1">Overall Business Purpose</label>
             <input type="text" id="businessPurpose" placeholder="AGU Conference Presentation" class="chk-input w-full border rounded p-2 text-sm" required />
           </div>
           <div>
@@ -77,7 +82,7 @@
         <div class="flex justify-between items-center mb-3">
           <div>
             <h2 class="text-md font-semibold text-slate-800">2. Trip Legs & Destination Itinerary</h2>
-            <p class="text-xs text-slate-500">Add consecutive trip legs. Per diem is automatically calculated for Business legs.</p>
+            <p class="text-xs text-slate-500">Add consecutive trip legs with specific leg purposes. Per diem is calculated for Business legs.</p>
           </div>
           <button type="button" onclick="addLegRow()" class="px-3 py-1 bg-emerald-600 hover:bg-emerald-700 text-white rounded text-xs font-semibold shadow">
             ➕ Add Trip Leg
@@ -103,7 +108,7 @@
         <div class="flex justify-between items-center mb-3">
           <div>
             <h2 class="text-md font-semibold text-slate-800">3. Flight Quotes & Comparisons</h2>
-            <p class="text-xs text-slate-500">Document round-trip/one-way flights, search Google Flights, and attach flight PDF quotes.</p>
+            <p class="text-xs text-slate-500">Document round-trip/one-way flights, search Google Flights, and attach PDF quotes.</p>
           </div>
           <button type="button" onclick="addFlightRow()" class="px-3 py-1 bg-sky-600 hover:bg-sky-700 text-white rounded text-xs font-semibold shadow">
             ➕ Add Flight Comparison
@@ -118,7 +123,7 @@
         <div class="flex justify-between items-center mb-3">
           <div>
             <h2 class="text-md font-semibold text-slate-800">4. Hotel Stays & Accommodations</h2>
-            <p class="text-xs text-slate-500">Track hotel locations, night rates, and attach PDF hotel quotes/confirmations.</p>
+            <p class="text-xs text-slate-500">Track hotel locations, websites, night rates, and attach PDF quotes/confirmations.</p>
           </div>
           <button type="button" onclick="addHotelRow()" class="px-3 py-1 bg-amber-600 hover:bg-amber-700 text-white rounded text-xs font-semibold shadow">
             ➕ Add Hotel Stay
@@ -133,7 +138,7 @@
         <div class="flex justify-between items-center mb-3">
           <div>
             <h2 class="text-md font-semibold text-slate-800">5. Ground Transportation & Mileage Trips</h2>
-            <p class="text-xs text-slate-500">Document personal vehicle mileage, taxi/rideshare, or train trips with PDF route attachments.</p>
+            <p class="text-xs text-slate-500">Document personal car mileage, taxi/rideshare, or train trips with PDF route attachments.</p>
           </div>
           <button type="button" onclick="addMileageRow()" class="px-3 py-1 bg-purple-600 hover:bg-purple-700 text-white rounded text-xs font-semibold shadow">
             ➕ Add Ground/Mileage Trip
@@ -143,7 +148,7 @@
         <div id="mileageContainer" class="space-y-3"></div>
       </section>
 
-      <!-- 6. Travel Adjustments & Non-Standard Situations -->
+      <!-- 6. Travel Adjustments Checklist -->
       <section class="border p-4 rounded-lg bg-slate-50 border-slate-200">
         <h2 class="text-md font-semibold text-slate-800 mb-1">6. Special Travel Adjustments & Checklist</h2>
         <p class="text-xs text-slate-500 mb-3">Check applicable non-standard situations and provide required policy notes.</p>
@@ -155,7 +160,7 @@
               <label for="adjFamily" class="font-semibold text-slate-700">Traveling with partner/family</label>
             </div>
             <div class="md:col-span-7">
-              <input type="text" id="adjFamilyNotes" placeholder="Notes/details (e.g. Spouse accompanying at personal cost)" class="chk-input w-full border rounded p-1 text-xs" />
+              <input type="text" id="adjFamilyNotes" placeholder="Notes (e.g. Spouse accompanying at personal cost)" class="chk-input w-full border rounded p-1 text-xs" />
             </div>
           </div>
 
@@ -165,7 +170,7 @@
               <label for="adjSharedRoom" class="font-semibold text-slate-700">Shared rooming situation</label>
             </div>
             <div class="md:col-span-7">
-              <input type="text" id="adjSharedRoomNotes" placeholder="Notes/details (e.g. Room shared with Dr. Smith, 50% lodging claimed)" class="chk-input w-full border rounded p-1 text-xs" />
+              <input type="text" id="adjSharedRoomNotes" placeholder="Notes (e.g. Room shared with Dr. Smith)" class="chk-input w-full border rounded p-1 text-xs" />
             </div>
           </div>
 
@@ -175,7 +180,7 @@
               <label for="adjOutsideOrg" class="font-semibold text-slate-700">Expenses covered by outside organization</label>
             </div>
             <div class="md:col-span-7">
-              <input type="text" id="adjOutsideOrgNotes" placeholder="Notes/details (e.g. Conference host providing 2 days meals)" class="chk-input w-full border rounded p-1 text-xs" />
+              <input type="text" id="adjOutsideOrgNotes" placeholder="Notes (e.g. Host providing 2 meals)" class="chk-input w-full border rounded p-1 text-xs" />
             </div>
           </div>
 
@@ -185,7 +190,7 @@
               <label for="adjPersonalTime" class="font-semibold text-slate-700">Adding personal time to travel</label>
             </div>
             <div class="md:col-span-7">
-              <input type="text" id="adjPersonalTimeNotes" placeholder="Notes/details (e.g. Personal leg added Dec 10-12 at $0 per diem)" class="chk-input w-full border rounded p-1 text-xs" />
+              <input type="text" id="adjPersonalTimeNotes" placeholder="Notes (e.g. Personal leg added Dec 10-12)" class="chk-input w-full border rounded p-1 text-xs" />
             </div>
           </div>
 
@@ -195,7 +200,7 @@
               <label for="adjAltLocation" class="font-semibold text-slate-700">Starting/stopping in non-home location</label>
             </div>
             <div class="md:col-span-7">
-              <input type="text" id="adjAltLocationNotes" placeholder="Notes/details (e.g. Departing from field site in SFO instead of home)" class="chk-input w-full border rounded p-1 text-xs" />
+              <input type="text" id="adjAltLocationNotes" placeholder="Notes (e.g. Departing from field site in SFO)" class="chk-input w-full border rounded p-1 text-xs" />
             </div>
           </div>
         </div>
@@ -219,7 +224,7 @@
       <!-- 8. Additional General PDF Attachments Uploader -->
       <section class="border p-4 rounded-lg bg-slate-50 border-slate-200">
         <h2 class="text-md font-semibold text-slate-800 mb-1">8. Additional Supporting PDF Attachments</h2>
-        <p class="text-xs text-slate-500 mb-2">Upload any external PDF files (conference agendas, flight e-tickets, hotel receipts) to be merged into the collated package.</p>
+        <p class="text-xs text-slate-500 mb-2">Upload any external PDF files to be merged into the collated package.</p>
         <input type="file" id="generalPdfUpload" accept="application/pdf" multiple onchange="handleGeneralPdfUpload(event)" class="text-xs text-slate-600" />
         <div id="generalPdfList" class="mt-2 text-xs text-slate-600 space-y-1"></div>
       </section>
@@ -263,7 +268,6 @@
     let mileageCounter = 0;
     let costCenterCounter = 0;
 
-    // Store array buffers for uploaded PDFs
     const uploadedPdfs = {
       flights: {},
       hotels: {},
@@ -271,14 +275,16 @@
       general: []
     };
 
-    // --- Soft Pink Highlighting ---
+    // --- Soft Pink (Empty) vs Soft Green (Filled) Highlighting ---
     function updateFieldHighlights() {
       const inputs = document.querySelectorAll('.chk-input');
       inputs.forEach(input => {
         if (!input.value || input.value.trim() === '') {
           input.classList.add('field-empty');
+          input.classList.remove('field-filled');
         } else {
           input.classList.remove('field-empty');
+          input.classList.add('field-filled');
         }
       });
     }
@@ -310,7 +316,7 @@
             </div>
           </div>
 
-          <div class="grid grid-cols-1 md:grid-cols-6 gap-2 text-xs">
+          <div class="grid grid-cols-1 md:grid-cols-7 gap-2 text-xs">
             <div>
               <label class="block text-slate-500 mb-0.5">Start Date</label>
               <input type="date" id="legStart_${id}" value="${data.start || ''}" class="chk-input w-full border rounded p-1.5" onchange="calculateTotals()" required />
@@ -326,6 +332,10 @@
             <div>
               <label class="block text-slate-500 mb-0.5">State (ST)</label>
               <input type="text" id="legState_${id}" value="${data.state || ''}" placeholder="CA" maxlength="2" class="chk-input w-full border rounded p-1.5" required />
+            </div>
+            <div>
+              <label class="block text-slate-500 mb-0.5">Leg Purpose</label>
+              <input type="text" id="legPurpose_${id}" value="${data.purpose || ''}" placeholder="AGU Conference" class="chk-input w-full border rounded p-1.5" />
             </div>
             <div>
               <label class="block text-slate-500 mb-0.5">M&IE Rate ($)</label>
@@ -372,7 +382,7 @@
       calculateTotals();
     }
 
-    // --- Dynamic Flight Comparisons ---
+    // --- Dynamic Flights ---
     function addFlightRow(data = {}) {
       flightCounter++;
       const id = flightCounter;
@@ -434,11 +444,10 @@
             </div>
           </div>
 
-          <!-- Section PDF Upload -->
           <div class="p-2 bg-sky-50/50 border border-sky-200 rounded text-xs mt-2 flex justify-between items-center">
             <div>
               <span class="font-bold text-sky-900">📄 Upload Supporting Flight PDF Quote/Receipt</span>
-              <p class="text-[10px] text-slate-500">Will be appended to the complete collated PDF package.</p>
+              <p class="text-[10px] text-slate-500">Appended to the complete collated PDF package.</p>
             </div>
             <input type="file" accept="application/pdf" onchange="handleSectionPdfUpload(event, ${id}, 'flights')" class="text-[11px] text-slate-600" />
           </div>
@@ -488,7 +497,7 @@
       window.open(url, '_blank');
     }
 
-    // --- Dynamic Hotel Stays ---
+    // --- Dynamic Hotels ---
     function addHotelRow(data = {}) {
       hotelCounter++;
       const id = hotelCounter;
@@ -501,10 +510,14 @@
             ${container.children.length > 0 ? `<button type="button" onclick="removeHotelRow(${id})" class="text-red-600 hover:text-red-800 text-xs font-bold">✕ Remove</button>` : ''}
           </div>
 
-          <div class="grid grid-cols-1 md:grid-cols-5 gap-2 text-xs">
+          <div class="grid grid-cols-1 md:grid-cols-6 gap-2 text-xs">
             <div>
               <label class="block text-slate-500 mb-0.5">Hotel Name / Location</label>
-              <input type="text" id="htName_${id}" value="${data.name || ''}" placeholder="Marriott San Francisco" class="chk-input w-full border rounded p-1.5" />
+              <input type="text" id="htName_${id}" value="${data.name || ''}" placeholder="Andrews Hotel" class="chk-input w-full border rounded p-1.5" />
+            </div>
+            <div>
+              <label class="block text-slate-500 mb-0.5">Hotel Website URL</label>
+              <input type="url" id="htWebsite_${id}" value="${data.website || ''}" placeholder="https://andrewshotel.com" class="chk-input w-full border rounded p-1.5" />
             </div>
             <div>
               <label class="block text-slate-500 mb-0.5">Check-In Date</label>
@@ -519,16 +532,15 @@
               <input type="number" id="htRate_${id}" value="${data.rate || ''}" placeholder="225.00" step="0.01" class="chk-input w-full border rounded p-1.5" oninput="calculateTotals()" />
             </div>
             <div>
-              <label class="block text-slate-500 mb-0.5">Notes (e.g. Conference Hotel)</label>
-              <input type="text" id="htNotes_${id}" value="${data.notes || ''}" placeholder="AGU Preferred Rate" class="chk-input w-full border rounded p-1.5" />
+              <label class="block text-slate-500 mb-0.5">Notes</label>
+              <input type="text" id="htNotes_${id}" value="${data.notes || ''}" placeholder="Conference Rate" class="chk-input w-full border rounded p-1.5" />
             </div>
           </div>
 
-          <!-- Section PDF Upload -->
           <div class="p-2 bg-amber-50/50 border border-amber-200 rounded text-xs flex justify-between items-center">
             <div>
               <span class="font-bold text-amber-900">📄 Upload Hotel Quote / Confirmation PDF</span>
-              <p class="text-[10px] text-slate-500">Will be appended to the complete collated PDF package.</p>
+              <p class="text-[10px] text-slate-500">Appended to the complete collated PDF package.</p>
             </div>
             <input type="file" accept="application/pdf" onchange="handleSectionPdfUpload(event, ${id}, 'hotels')" class="text-[11px] text-slate-600" />
           </div>
@@ -596,11 +608,10 @@
             </div>
           </div>
 
-          <!-- Section PDF Upload -->
           <div class="p-2 bg-purple-50/50 border border-purple-200 rounded text-xs flex justify-between items-center">
             <div>
               <span class="font-bold text-purple-900">📄 Upload Ground Route / Map PDF Attachment</span>
-              <p class="text-[10px] text-slate-500">Will be appended to the complete collated PDF package.</p>
+              <p class="text-[10px] text-slate-500">Appended to the complete collated PDF package.</p>
             </div>
             <input type="file" accept="application/pdf" onchange="handleSectionPdfUpload(event, ${id}, 'mileage')" class="text-[11px] text-slate-600" />
           </div>
@@ -686,7 +697,7 @@
       const listContainer = document.getElementById('generalPdfList');
       listContainer.innerHTML = '';
 
-      Array.from(files).forEach((file, idx) => {
+      Array.from(files).forEach((file) => {
         const reader = new FileReader();
         reader.onload = function(e) {
           uploadedPdfs.general.push(e.target.result);
@@ -713,6 +724,7 @@
         const lodgingRate = parseFloat(document.getElementById(`legLodgingRate_${id}`).value) || 0;
         const city = document.getElementById(`legCity_${id}`).value;
         const state = document.getElementById(`legState_${id}`).value;
+        const purpose = document.getElementById(`legPurpose_${id}`).value;
 
         startEl.classList.remove('field-invalid');
         endEl.classList.remove('field-invalid');
@@ -727,7 +739,7 @@
             endEl.classList.add('field-invalid');
           }
 
-          allLegs.push({ id, type, start: sDate, end: eDate, mealRate, lodgingRate, city, state, startStr: startEl.value, endStr: endEl.value, startEl, endEl });
+          allLegs.push({ id, type, start: sDate, end: eDate, mealRate, lodgingRate, city, state, purpose, startStr: startEl.value, endStr: endEl.value, startEl, endEl });
         }
       });
 
@@ -831,7 +843,7 @@
       };
     }
 
-    // --- Robust GSA API Fetcher ---
+    // --- GSA API Fetcher ---
     async function fetchGSARatesForLeg(id) {
       const city = document.getElementById(`legCity_${id}`).value.trim();
       const state = document.getElementById(`legState_${id}`).value.trim().toUpperCase();
@@ -923,6 +935,7 @@
           end: document.getElementById(`legEnd_${id}`).value,
           city: document.getElementById(`legCity_${id}`).value,
           state: document.getElementById(`legState_${id}`).value,
+          purpose: document.getElementById(`legPurpose_${id}`).value,
           mealRate: document.getElementById(`legMealRate_${id}`).value,
           lodgingRate: document.getElementById(`legLodgingRate_${id}`).value
         });
@@ -949,6 +962,7 @@
         const id = row.id.split('_')[1];
         data.hotels.push({
           name: document.getElementById(`htName_${id}`).value,
+          website: document.getElementById(`htWebsite_${id}`).value,
           start: document.getElementById(`htStart_${id}`).value,
           end: document.getElementById(`htEnd_${id}`).value,
           rate: document.getElementById(`htRate_${id}`).value,
@@ -1073,7 +1087,6 @@
       setField('TRAVEL PERIOD', totals.overallStart);
       setField('to', totals.overallEnd);
 
-      // Per Diem & Expense Rows
       setField('MEALS Per Diem', `$${bizLegs[0]?.mealRate || 0}/day (Biz Legs)`);
       setField('DATES#0', `${totals.overallStart} - ${totals.overallEnd}`);
       setField('Total#0', totals.mealTotal.toFixed(2));
@@ -1085,7 +1098,6 @@
       setField('DATES#2', totals.overallStart);
       setField('Total#2', totals.airfareTotal.toFixed(2));
 
-      // Meeting Registration Fee
       if (totals.regFee > 0) {
         setField('MEETING REGISTRATION', `Conference Fee`);
         setField('DATES#5', totals.overallStart);
@@ -1100,7 +1112,6 @@
 
       setField('TOTAL#11', totals.grandTotal.toFixed(2));
 
-      // Non-Standard Situation Checkbox Auto-Trigger
       const isNonStandard = document.getElementById('adjFamily').checked || 
                             document.getElementById('adjSharedRoom').checked || 
                             document.getElementById('adjOutsideOrg').checked || 
@@ -1111,7 +1122,6 @@
         if (cb && isNonStandard) cb.check();
       } catch(e) {}
 
-      // Map ALL Cost Centers on Page 2
       const ccFields = [
         ['COST CENTER NO', 'AMOUNT', 'DESCRIPTION'],
         ['undefined_5', 'undefined_6', 'undefined_7'],
@@ -1158,12 +1168,12 @@
       const todayFormatted = new Date().toLocaleDateString('en-US', { year: 'numeric', month: 'long', day: 'numeric' });
 
       let tableBody = [
-        [{ text: 'Leg Destination', bold: true }, { text: 'Type', bold: true }, { text: 'Dates', bold: true }, { text: 'M&IE Rate', bold: true }, { text: 'Lodging Rate', bold: true }]
+        [{ text: 'Leg Destination', bold: true }, { text: 'Type', bold: true }, { text: 'Dates', bold: true }, { text: 'Purpose', bold: true }, { text: 'M&IE Rate', bold: true }, { text: 'Lodging Rate', bold: true }]
       ];
 
       totals.legs.forEach(leg => {
         tableBody.push([
-          `${leg.city}, ${leg.state}`, leg.type, `${leg.startStr} to ${leg.endStr}`, `$${leg.mealRate}/day`, `$${leg.lodgingRate}/night`
+          `${leg.city}, ${leg.state}`, leg.type, `${leg.startStr} to ${leg.endStr}`, leg.purpose || 'N/A', `$${leg.mealRate}/day`, `$${leg.lodgingRate}/night`
         ]);
       });
 
@@ -1175,7 +1185,7 @@
         content: [
           { text: 'U.S. General Services Administration (GSA)', style: 'agencyHeader', alignment: 'center' },
           { text: `FY ${year} Per Diem Rates Breakdown`, style: 'header', alignment: 'center', margin: [0, 2, 0, 15] },
-          { table: { widths: ['25%', '15%', '30%', '15%', '15%'], body: tableBody }, margin: [0, 0, 0, 15] },
+          { table: { widths: ['22%', '12%', '26%', '20%', '10%', '10%'], body: tableBody }, margin: [0, 0, 0, 15] },
           { text: 'Documentation & Data Verification', style: 'sectionHeader' },
           {
             text: [
@@ -1248,81 +1258,117 @@
       };
     }
 
-    // --- Chronological Itinerary Summary PDF Generator ---
+    // --- Helper to Format Date String into "Tuesday, Dec 5" ---
+    function formatDateWithDay(dateStr) {
+      if (!dateStr) return 'N/A';
+      const [y, m, d] = dateStr.split('-').map(Number);
+      if (!y || !m || !d) return dateStr;
+      const dt = new Date(y, m - 1, d);
+      return dt.toLocaleDateString('en-US', { weekday: 'short', month: 'short', day: 'numeric' });
+    }
+
+    // --- Narrative Chronological Itinerary Generator ---
     function getItineraryDocDefinition() {
       const totals = calculateTotals();
       const name = document.getElementById('travelerName').value || 'N/A';
       const purpose = document.getElementById('businessPurpose').value || 'N/A';
 
-      // Build Chronological Events List
       let timelineEvents = [];
 
-      // Add Legs
+      // Parse Legs
       totals.legs.forEach(leg => {
-        timelineEvents.push({
-          date: leg.startStr,
-          type: 'Leg',
-          summary: `${leg.type === 'Business' ? '💼' : '🏖️'} Trip Leg: ${leg.city}, ${leg.state} (${leg.startStr} to ${leg.endStr})`
-        });
+        const legLabel = `${leg.type === 'Business' ? '💼 Business Leg' : '🏖️ Personal Leg'}: ${leg.city}, ${leg.state}${leg.purpose ? ' (' + leg.purpose + ')' : ''}`;
+        if (leg.startStr === leg.endStr) {
+          timelineEvents.push({ date: leg.startStr, desc: legLabel });
+        } else {
+          timelineEvents.push({
+            date: leg.startStr,
+            desc: `Start ${legLabel} (thru ${formatDateWithDay(leg.endStr)})`
+          });
+        }
       });
 
-      // Add Flights
+      // Parse Flights
       document.querySelectorAll('[id^="flightRow_"]').forEach(row => {
         const id = row.id.split('_')[1];
-        const date = document.getElementById(`flStartDate_${id}`)?.value || 'N/A';
-        const orig = document.getElementById(`flOrigin_${id}`)?.value || '';
-        const dest = document.getElementById(`flDest_${id}`)?.value || '';
+        const start = document.getElementById(`flStartDate_${id}`)?.value;
+        const end = document.getElementById(`flEndDate_${id}`)?.value;
+        const orig = document.getElementById(`flOrigin_${id}`)?.value || 'Origin';
+        const dest = document.getElementById(`flDest_${id}`)?.value || 'Destination';
         const carrier = document.getElementById(`flSelCarrier_${id}`)?.value || '';
-        const price = document.getElementById(`flSelPrice_${id}`)?.value || '0.00';
 
-        timelineEvents.push({
-          date,
-          type: 'Flight',
-          summary: `✈️ Flight: ${orig} ➔ ${dest} (${carrier}, $${price})`
-        });
+        if (start) {
+          timelineEvents.push({
+            date: start,
+            desc: `✈️ Outbound Flight: ${orig} ➔ ${dest}${carrier ? ' (' + carrier + ')' : ''}`
+          });
+        }
+        if (end) {
+          timelineEvents.push({
+            date: end,
+            desc: `✈️ Return Flight: ${dest} ➔ ${orig}${carrier ? ' (' + carrier + ')' : ''}`
+          });
+        }
       });
 
-      // Add Hotels
+      // Parse Hotels
       document.querySelectorAll('[id^="hotelRow_"]').forEach(row => {
         const id = row.id.split('_')[1];
-        const start = document.getElementById(`htStart_${id}`)?.value || 'N/A';
-        const end = document.getElementById(`htEnd_${id}`)?.value || '';
-        const hName = document.getElementById(`htName_${id}`)?.value || 'Hotel Stay';
-        const rate = document.getElementById(`htRate_${id}`)?.value || '0.00';
+        const start = document.getElementById(`htStart_${id}`)?.value;
+        const end = document.getElementById(`htEnd_${id}`)?.value;
+        const hName = document.getElementById(`htName_${id}`)?.value || 'Hotel';
+        const website = document.getElementById(`htWebsite_${id}`)?.value || '';
 
-        timelineEvents.push({
-          date: start,
-          type: 'Hotel',
-          summary: `🏨 Hotel: ${hName} (${start} to ${end}, $${rate}/night)`
-        });
+        if (start) {
+          timelineEvents.push({
+            date: start,
+            desc: `🏨 Check in at ${hName}${website ? ' (' + website + ')' : ''}`
+          });
+        }
+        if (end) {
+          timelineEvents.push({
+            date: end,
+            desc: `🏨 Check out of ${hName}`
+          });
+        }
       });
 
-      // Add Mileage
+      // Parse Ground Mileage
       document.querySelectorAll('[id^="mileageRow_"]').forEach(row => {
         const id = row.id.split('_')[1];
-        const date = document.getElementById(`mDate_${id}`)?.value || 'N/A';
+        const date = document.getElementById(`mDate_${id}`)?.value;
         const orig = document.getElementById(`mOrigin_${id}`)?.value || '';
         const dest = document.getElementById(`mDest_${id}`)?.value || '';
-        const dist = document.getElementById(`mDist_${id}`)?.value || '0';
 
-        timelineEvents.push({
-          date,
-          type: 'Ground',
-          summary: `🚗 Ground/Car Trip: ${orig} ➔ ${dest} (${dist} roundtrip miles)`
-        });
+        if (date) {
+          timelineEvents.push({
+            date,
+            desc: `🚗 Ground Travel: ${orig} ➔ ${dest}`
+          });
+        }
       });
 
-      // Sort Chronologically by Date
+      // Sort Events Chronologically
       timelineEvents.sort((a, b) => (a.date > b.date ? 1 : -1));
 
-      let timelineTable = [
-        [{ text: 'Date', bold: true }, { text: 'Event Description', bold: true }]
-      ];
+      // Group Events by Date for Narrative Cleanliness
+      const groupedMap = {};
       timelineEvents.forEach(e => {
-        timelineTable.push([e.date, e.summary]);
+        if (!groupedMap[e.date]) groupedMap[e.date] = [];
+        groupedMap[e.date].push(e.desc);
       });
 
-      // Travel Adjustments Checklist Items
+      let timelineTable = [
+        [{ text: 'Date / Day', bold: true }, { text: 'Scheduled Travel Events', bold: true }]
+      ];
+
+      Object.keys(groupedMap).forEach(dStr => {
+        const formattedDay = formatDateWithDay(dStr);
+        const narrative = groupedMap[dStr].join('; ');
+        timelineTable.push([{ text: formattedDay, bold: true }, narrative]);
+      });
+
+      // Travel Adjustments
       let adjItems = [];
       if (document.getElementById('adjFamily').checked) adjItems.push(`• Partner/Family Traveling: ${document.getElementById('adjFamilyNotes').value || 'Yes'}`);
       if (document.getElementById('adjSharedRoom').checked) adjItems.push(`• Shared Rooming: ${document.getElementById('adjSharedRoomNotes').value || 'Yes'}`);
@@ -1333,20 +1379,20 @@
       return {
         content: [
           { text: 'SPACE SCIENCE INSTITUTE', style: 'header', alignment: 'center' },
-          { text: 'Travel Itinerary & Comprehensive Summary', style: 'subheader', alignment: 'center', margin: [0, 2, 0, 15] },
+          { text: 'Travel Itinerary & Chronological Schedule', style: 'subheader', alignment: 'center', margin: [0, 2, 0, 15] },
           {
             table: {
               widths: ['30%', '70%'],
               body: [
                 [{ text: 'Traveler Name:', bold: true }, name],
                 [{ text: 'Overall Travel Period:', bold: true }, `${totals.overallStart} to ${totals.overallEnd} (${totals.totalDays} Days)`],
-                [{ text: 'Business Purpose:', bold: true }, purpose]
+                [{ text: 'Overall Purpose:', bold: true }, purpose]
               ]
             },
             layout: 'lightHorizontalLines', margin: [0, 0, 0, 15]
           },
-          { text: 'Chronological Trip Itinerary Timeline', style: 'sectionHeader' },
-          { table: { widths: ['25%', '75%'], body: timelineTable }, margin: [0, 5, 0, 15] },
+          { text: 'Narrative Chronological Travel Timeline', style: 'sectionHeader' },
+          { table: { widths: ['30%', '70%'], body: timelineTable }, margin: [0, 5, 0, 15] },
 
           adjItems.length ? { text: 'Travel Adjustments & Non-Standard Situations', style: 'sectionHeader' } : {},
           adjItems.length ? { ul: adjItems, fontSize: 10, margin: [0, 0, 0, 15] } : {},
@@ -1371,7 +1417,7 @@
       };
     }
 
-    // --- Individual PDF Downloads ---
+    // --- Individual Downloads ---
     function generateGSARateSheetPDF() {
       const biz = calculateTotals().legs.filter(l => l.type === 'Business')[0] || { city: 'Destination', state: 'ST' };
       pdfMake.createPdf(getGSADocDefinition()).download(`GSA_PerDiem_Rates_${biz.city}_${biz.state}.pdf`);
@@ -1392,12 +1438,11 @@
       pdfMake.createPdf(getItineraryDocDefinition()).download(`TA_Itinerary_${name.replace(/\s+/g, '_')}.pdf`);
     }
 
-    // --- Collated Package PDF Generator (Merges PDF Attachments) ---
+    // --- Collated PDF Package Generator ---
     async function generateCollatedPackagePDF() {
       try {
         const masterPdf = await PDFLib.PDFDocument.create();
 
-        // 1. Filled Official TA Form
         const taBytes = await getFilledTABytes();
         const taDoc = await PDFLib.PDFDocument.load(taBytes);
         const taPages = await masterPdf.copyPages(taDoc, taDoc.getPageIndices());
@@ -1414,7 +1459,6 @@
           });
         };
 
-        // Helper to append uploaded raw PDF ArrayBuffers
         const appendRawPdfBytes = async (bytes) => {
           try {
             const doc = await PDFLib.PDFDocument.load(bytes);
@@ -1425,13 +1469,11 @@
           }
         };
 
-        // 2. Auxiliary Summaries
         await appendPdfMake(getItineraryDocDefinition());
         await appendPdfMake(getGSADocDefinition());
         await appendPdfMake(getFlightCompDocDefinition());
         await appendPdfMake(getMileageDocDefinition());
 
-        // 3. User-Uploaded Section PDFs
         for (const id in uploadedPdfs.flights) await appendRawPdfBytes(uploadedPdfs.flights[id]);
         for (const id in uploadedPdfs.hotels) await appendRawPdfBytes(uploadedPdfs.hotels[id]);
         for (const id in uploadedPdfs.mileage) await appendRawPdfBytes(uploadedPdfs.mileage[id]);
