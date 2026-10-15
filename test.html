@@ -15,11 +15,11 @@
   
   <style>
     .field-empty {
-      background-color: #fdf2f8 !important; /* Soft pink for visual checklist */
+      background-color: #fdf2f8 !important; /* Soft pink for empty checklist fields */
       border-color: #f472b6 !important;
     }
     .field-invalid {
-      background-color: #fef2f2 !important; /* Soft red for date errors */
+      background-color: #fef2f2 !important; /* Soft red for date sequence errors */
       border-color: #f87171 !important;
     }
   </style>
@@ -30,7 +30,7 @@
     <header class="border-b pb-4 mb-6 flex justify-between items-center flex-wrap gap-3">
       <div>
         <h1 class="text-2xl font-bold text-slate-900">Space Science Institute - TA Assistant</h1>
-        <p class="text-sm text-slate-500">Automate TA forms, multi-leg per diems, flight comparisons, and mileage reports.</p>
+        <p class="text-sm text-slate-500">Automate TA forms, multi-leg itineraries, flight/hotel/car documentation, and collated PDF packages.</p>
       </div>
       <!-- Save & Load Draft JSON -->
       <div class="flex gap-2">
@@ -49,10 +49,10 @@
 
     <form id="taForm" class="space-y-6" onsubmit="event.preventDefault();">
       
-      <!-- 1. Traveler Info -->
+      <!-- 1. General Traveler & Trip Details -->
       <section>
-        <h2 class="text-lg font-semibold text-slate-700 mb-3 border-b pb-1">1. Traveler Info & TA Number</h2>
-        <div class="grid grid-cols-1 md:grid-cols-3 gap-4">
+        <h2 class="text-lg font-semibold text-slate-700 mb-3 border-b pb-1">1. Traveler Info & Registration Fees</h2>
+        <div class="grid grid-cols-1 md:grid-cols-4 gap-4">
           <div>
             <label class="block text-xs font-semibold text-slate-600 mb-1">Traveler Name (First Last)</label>
             <input type="text" id="travelerName" placeholder="Jane Doe" class="chk-input w-full border rounded p-2 text-sm" required />
@@ -64,6 +64,10 @@
           <div>
             <label class="block text-xs font-semibold text-slate-600 mb-1">Business Purpose</label>
             <input type="text" id="businessPurpose" placeholder="AGU Conference Presentation" class="chk-input w-full border rounded p-2 text-sm" required />
+          </div>
+          <div>
+            <label class="block text-xs font-semibold text-slate-600 mb-1">Meeting Registration Fee ($)</label>
+            <input type="number" id="conferenceRegFee" placeholder="450.00" step="0.01" class="chk-input w-full border rounded p-2 text-sm" oninput="calculateTotals()" />
           </div>
         </div>
       </section>
@@ -94,12 +98,12 @@
         </div>
       </section>
 
-      <!-- 3. Multi-Flight Comparisons & Image Attachment -->
+      <!-- 3. Multi-Flight Comparisons -->
       <section class="border p-4 rounded-lg bg-white border-slate-200">
         <div class="flex justify-between items-center mb-3">
           <div>
             <h2 class="text-md font-semibold text-slate-800">3. Flight Quotes & Comparisons</h2>
-            <p class="text-xs text-slate-500">Support for round-trip/one-way flights, Google Flights deep search, and screenshot proof.</p>
+            <p class="text-xs text-slate-500">Document round-trip/one-way flights, search Google Flights, and attach flight PDF quotes.</p>
           </div>
           <button type="button" onclick="addFlightRow()" class="px-3 py-1 bg-sky-600 hover:bg-sky-700 text-white rounded text-xs font-semibold shadow">
             ➕ Add Flight Comparison
@@ -109,26 +113,99 @@
         <div id="flightsContainer" class="space-y-4"></div>
       </section>
 
-      <!-- 4. Ground Mileage & Map Launcher -->
+      <!-- 4. Hotel Stays Section -->
       <section class="border p-4 rounded-lg bg-white border-slate-200">
         <div class="flex justify-between items-center mb-3">
           <div>
-            <h2 class="text-md font-semibold text-slate-800">4. Personal Vehicle & Transit Trips (Google Maps)</h2>
-            <p class="text-xs text-slate-500">Calculate reimbursement for personal car, taxi/rideshare, or train routes.</p>
+            <h2 class="text-md font-semibold text-slate-800">4. Hotel Stays & Accommodations</h2>
+            <p class="text-xs text-slate-500">Track hotel locations, night rates, and attach PDF hotel quotes/confirmations.</p>
+          </div>
+          <button type="button" onclick="addHotelRow()" class="px-3 py-1 bg-amber-600 hover:bg-amber-700 text-white rounded text-xs font-semibold shadow">
+            ➕ Add Hotel Stay
+          </button>
+        </div>
+
+        <div id="hotelsContainer" class="space-y-3"></div>
+      </section>
+
+      <!-- 5. Ground Mileage & Transit -->
+      <section class="border p-4 rounded-lg bg-white border-slate-200">
+        <div class="flex justify-between items-center mb-3">
+          <div>
+            <h2 class="text-md font-semibold text-slate-800">5. Ground Transportation & Mileage Trips</h2>
+            <p class="text-xs text-slate-500">Document personal vehicle mileage, taxi/rideshare, or train trips with PDF route attachments.</p>
           </div>
           <button type="button" onclick="addMileageRow()" class="px-3 py-1 bg-purple-600 hover:bg-purple-700 text-white rounded text-xs font-semibold shadow">
-            ➕ Add Mileage/Transit Trip
+            ➕ Add Ground/Mileage Trip
           </button>
         </div>
 
         <div id="mileageContainer" class="space-y-3"></div>
       </section>
 
-      <!-- 5. Dynamic Cost Centers -->
+      <!-- 6. Travel Adjustments & Non-Standard Situations -->
+      <section class="border p-4 rounded-lg bg-slate-50 border-slate-200">
+        <h2 class="text-md font-semibold text-slate-800 mb-1">6. Special Travel Adjustments & Checklist</h2>
+        <p class="text-xs text-slate-500 mb-3">Check applicable non-standard situations and provide required policy notes.</p>
+
+        <div class="space-y-2 text-xs">
+          <div class="grid grid-cols-1 md:grid-cols-12 gap-2 items-center bg-white p-2 rounded border">
+            <div class="md:col-span-5 flex items-center gap-2">
+              <input type="checkbox" id="adjFamily" class="rounded text-indigo-600" />
+              <label for="adjFamily" class="font-semibold text-slate-700">Traveling with partner/family</label>
+            </div>
+            <div class="md:col-span-7">
+              <input type="text" id="adjFamilyNotes" placeholder="Notes/details (e.g. Spouse accompanying at personal cost)" class="chk-input w-full border rounded p-1 text-xs" />
+            </div>
+          </div>
+
+          <div class="grid grid-cols-1 md:grid-cols-12 gap-2 items-center bg-white p-2 rounded border">
+            <div class="md:col-span-5 flex items-center gap-2">
+              <input type="checkbox" id="adjSharedRoom" class="rounded text-indigo-600" />
+              <label for="adjSharedRoom" class="font-semibold text-slate-700">Shared rooming situation</label>
+            </div>
+            <div class="md:col-span-7">
+              <input type="text" id="adjSharedRoomNotes" placeholder="Notes/details (e.g. Room shared with Dr. Smith, 50% lodging claimed)" class="chk-input w-full border rounded p-1 text-xs" />
+            </div>
+          </div>
+
+          <div class="grid grid-cols-1 md:grid-cols-12 gap-2 items-center bg-white p-2 rounded border">
+            <div class="md:col-span-5 flex items-center gap-2">
+              <input type="checkbox" id="adjOutsideOrg" class="rounded text-indigo-600" />
+              <label for="adjOutsideOrg" class="font-semibold text-slate-700">Expenses covered by outside organization</label>
+            </div>
+            <div class="md:col-span-7">
+              <input type="text" id="adjOutsideOrgNotes" placeholder="Notes/details (e.g. Conference host providing 2 days meals)" class="chk-input w-full border rounded p-1 text-xs" />
+            </div>
+          </div>
+
+          <div class="grid grid-cols-1 md:grid-cols-12 gap-2 items-center bg-white p-2 rounded border">
+            <div class="md:col-span-5 flex items-center gap-2">
+              <input type="checkbox" id="adjPersonalTime" class="rounded text-indigo-600" />
+              <label for="adjPersonalTime" class="font-semibold text-slate-700">Adding personal time to travel</label>
+            </div>
+            <div class="md:col-span-7">
+              <input type="text" id="adjPersonalTimeNotes" placeholder="Notes/details (e.g. Personal leg added Dec 10-12 at $0 per diem)" class="chk-input w-full border rounded p-1 text-xs" />
+            </div>
+          </div>
+
+          <div class="grid grid-cols-1 md:grid-cols-12 gap-2 items-center bg-white p-2 rounded border">
+            <div class="md:col-span-5 flex items-center gap-2">
+              <input type="checkbox" id="adjAltLocation" class="rounded text-indigo-600" />
+              <label for="adjAltLocation" class="font-semibold text-slate-700">Starting/stopping in non-home location</label>
+            </div>
+            <div class="md:col-span-7">
+              <input type="text" id="adjAltLocationNotes" placeholder="Notes/details (e.g. Departing from field site in SFO instead of home)" class="chk-input w-full border rounded p-1 text-xs" />
+            </div>
+          </div>
+        </div>
+      </section>
+
+      <!-- 7. Dynamic Cost Centers -->
       <section class="border p-4 rounded-lg bg-white border-slate-200">
         <div class="flex justify-between items-center mb-3">
           <div>
-            <h2 class="text-md font-semibold text-slate-800">5. Cost Center Allocations (TA Form Page 2)</h2>
+            <h2 class="text-md font-semibold text-slate-800">7. Cost Center Allocations (TA Form Page 2)</h2>
             <p class="text-xs text-slate-500">Add grant cost center numbers to cover trip funding (All rows populate Page 2).</p>
           </div>
           <button type="button" onclick="addCostCenterRow()" class="px-3 py-1 bg-indigo-600 hover:bg-indigo-700 text-white rounded text-xs font-semibold shadow">
@@ -139,7 +216,15 @@
         <div id="costCentersContainer" class="space-y-3"></div>
       </section>
 
-      <!-- 6. TA Template Selector -->
+      <!-- 8. Additional General PDF Attachments Uploader -->
+      <section class="border p-4 rounded-lg bg-slate-50 border-slate-200">
+        <h2 class="text-md font-semibold text-slate-800 mb-1">8. Additional Supporting PDF Attachments</h2>
+        <p class="text-xs text-slate-500 mb-2">Upload any external PDF files (conference agendas, flight e-tickets, hotel receipts) to be merged into the collated package.</p>
+        <input type="file" id="generalPdfUpload" accept="application/pdf" multiple onchange="handleGeneralPdfUpload(event)" class="text-xs text-slate-600" />
+        <div id="generalPdfList" class="mt-2 text-xs text-slate-600 space-y-1"></div>
+      </section>
+
+      <!-- 9. TA Template Selector -->
       <section class="p-4 bg-amber-50 border border-amber-200 rounded-lg">
         <label class="block text-xs font-bold text-amber-800 mb-1">TA PDF Template File</label>
         <p class="text-xs text-amber-700 mb-2">Ensure <code>TA_Template.pdf</code> is stored in the repository root or select it below.</p>
@@ -174,14 +259,19 @@
   <script>
     let legCounter = 0;
     let flightCounter = 0;
+    let hotelCounter = 0;
     let mileageCounter = 0;
     let costCenterCounter = 0;
 
-    // Image Data Storage Maps
-    const flightImages = {};
-    const mileageImages = {};
+    // Store array buffers for uploaded PDFs
+    const uploadedPdfs = {
+      flights: {},
+      hotels: {},
+      mileage: {},
+      general: []
+    };
 
-    // --- Soft Pink Checklist Highlighting ---
+    // --- Soft Pink Highlighting ---
     function updateFieldHighlights() {
       const inputs = document.querySelectorAll('.chk-input');
       inputs.forEach(input => {
@@ -317,11 +407,11 @@
             </div>
             <div>
               <label class="block text-slate-500 mb-0.5">Departure Date</label>
-              <input type="date" id="flStartDate_${id}" value="${data.startDate || ''}" class="chk-input w-full border rounded p-1.5" />
+              <input type="date" id="flStartDate_${id}" value="${data.startDate || ''}" class="chk-input w-full border rounded p-1.5" onchange="calculateTotals()" />
             </div>
             <div id="flReturnDateCol_${id}">
               <label class="block text-slate-500 mb-0.5">Return Date</label>
-              <input type="date" id="flEndDate_${id}" value="${data.endDate || ''}" class="chk-input w-full border rounded p-1.5" />
+              <input type="date" id="flEndDate_${id}" value="${data.endDate || ''}" class="chk-input w-full border rounded p-1.5" onchange="calculateTotals()" />
             </div>
           </div>
 
@@ -344,16 +434,13 @@
             </div>
           </div>
 
-          <!-- Screenshot Upload Box -->
-          <div class="p-2 bg-sky-50/50 border border-sky-200 rounded text-xs mt-2">
-            <div class="flex justify-between items-center">
-              <div>
-                <span class="font-bold text-sky-900">📸 Attach Google Flights Screenshot Proof (Optional)</span>
-                <p class="text-[10px] text-slate-500">Take a snippet screenshot (<code>Win+Shift+S</code> or <code>Cmd+Shift+4</code>) and upload the image file here.</p>
-              </div>
-              <input type="file" accept="image/*" onchange="handleImageUpload(event, ${id}, 'flight')" class="text-[11px] text-slate-600" />
+          <!-- Section PDF Upload -->
+          <div class="p-2 bg-sky-50/50 border border-sky-200 rounded text-xs mt-2 flex justify-between items-center">
+            <div>
+              <span class="font-bold text-sky-900">📄 Upload Supporting Flight PDF Quote/Receipt</span>
+              <p class="text-[10px] text-slate-500">Will be appended to the complete collated PDF package.</p>
             </div>
-            <div id="flImagePreview_${id}" class="mt-2 hidden text-emerald-700 text-[11px] font-semibold">✓ Image proof attached!</div>
+            <input type="file" accept="application/pdf" onchange="handleSectionPdfUpload(event, ${id}, 'flights')" class="text-[11px] text-slate-600" />
           </div>
         </div>
       `;
@@ -367,7 +454,7 @@
     function removeFlightRow(id) {
       const el = document.getElementById(`flightRow_${id}`);
       if (el) el.remove();
-      delete flightImages[id];
+      delete uploadedPdfs.flights[id];
       calculateTotals();
       updateFieldHighlights();
     }
@@ -401,7 +488,67 @@
       window.open(url, '_blank');
     }
 
-    // --- Dynamic Mileage & Route Map Builder ---
+    // --- Dynamic Hotel Stays ---
+    function addHotelRow(data = {}) {
+      hotelCounter++;
+      const id = hotelCounter;
+      const container = document.getElementById('hotelsContainer');
+
+      const html = `
+        <div id="hotelRow_${id}" class="p-3 bg-white border border-slate-200 rounded-lg shadow-sm space-y-2 relative">
+          <div class="flex justify-between items-center border-b pb-1">
+            <span class="text-xs font-bold text-amber-900">Hotel Stay #${id}</span>
+            ${container.children.length > 0 ? `<button type="button" onclick="removeHotelRow(${id})" class="text-red-600 hover:text-red-800 text-xs font-bold">✕ Remove</button>` : ''}
+          </div>
+
+          <div class="grid grid-cols-1 md:grid-cols-5 gap-2 text-xs">
+            <div>
+              <label class="block text-slate-500 mb-0.5">Hotel Name / Location</label>
+              <input type="text" id="htName_${id}" value="${data.name || ''}" placeholder="Marriott San Francisco" class="chk-input w-full border rounded p-1.5" />
+            </div>
+            <div>
+              <label class="block text-slate-500 mb-0.5">Check-In Date</label>
+              <input type="date" id="htStart_${id}" value="${data.start || ''}" class="chk-input w-full border rounded p-1.5" onchange="calculateTotals()" />
+            </div>
+            <div>
+              <label class="block text-slate-500 mb-0.5">Check-Out Date</label>
+              <input type="date" id="htEnd_${id}" value="${data.end || ''}" class="chk-input w-full border rounded p-1.5" onchange="calculateTotals()" />
+            </div>
+            <div>
+              <label class="block text-slate-500 mb-0.5">Nightly Rate ($)</label>
+              <input type="number" id="htRate_${id}" value="${data.rate || ''}" placeholder="225.00" step="0.01" class="chk-input w-full border rounded p-1.5" oninput="calculateTotals()" />
+            </div>
+            <div>
+              <label class="block text-slate-500 mb-0.5">Notes (e.g. Conference Hotel)</label>
+              <input type="text" id="htNotes_${id}" value="${data.notes || ''}" placeholder="AGU Preferred Rate" class="chk-input w-full border rounded p-1.5" />
+            </div>
+          </div>
+
+          <!-- Section PDF Upload -->
+          <div class="p-2 bg-amber-50/50 border border-amber-200 rounded text-xs flex justify-between items-center">
+            <div>
+              <span class="font-bold text-amber-900">📄 Upload Hotel Quote / Confirmation PDF</span>
+              <p class="text-[10px] text-slate-500">Will be appended to the complete collated PDF package.</p>
+            </div>
+            <input type="file" accept="application/pdf" onchange="handleSectionPdfUpload(event, ${id}, 'hotels')" class="text-[11px] text-slate-600" />
+          </div>
+        </div>
+      `;
+
+      container.insertAdjacentHTML('beforeend', html);
+      updateFieldHighlights();
+      calculateTotals();
+    }
+
+    function removeHotelRow(id) {
+      const el = document.getElementById(`hotelRow_${id}`);
+      if (el) el.remove();
+      delete uploadedPdfs.hotels[id];
+      calculateTotals();
+      updateFieldHighlights();
+    }
+
+    // --- Dynamic Ground Mileage & Transit Trips ---
     function addMileageRow(data = {}) {
       mileageCounter++;
       const id = mileageCounter;
@@ -426,7 +573,11 @@
             </div>
           </div>
 
-          <div class="grid grid-cols-1 md:grid-cols-4 gap-2 text-xs">
+          <div class="grid grid-cols-1 md:grid-cols-5 gap-2 text-xs">
+            <div>
+              <label class="block text-slate-500 mb-0.5">Date</label>
+              <input type="date" id="mDate_${id}" value="${data.date || ''}" class="chk-input w-full border rounded p-1.5" onchange="calculateTotals()" />
+            </div>
             <div>
               <label class="block text-slate-500 mb-0.5">Origin</label>
               <input type="text" id="mOrigin_${id}" value="${data.origin || ''}" placeholder="Boulder, CO" class="chk-input w-full border rounded p-1.5" />
@@ -445,16 +596,13 @@
             </div>
           </div>
 
-          <!-- Route Screenshot Upload Box -->
-          <div class="p-2 bg-purple-50/50 border border-purple-200 rounded text-xs mt-2">
-            <div class="flex justify-between items-center">
-              <div>
-                <span class="font-bold text-purple-900">🗺️ Attach Google Maps Route Screenshot (Optional)</span>
-                <p class="text-[10px] text-slate-500">Capture the Google Maps route and upload image proof here.</p>
-              </div>
-              <input type="file" accept="image/*" onchange="handleImageUpload(event, ${id}, 'mileage')" class="text-[11px] text-slate-600" />
+          <!-- Section PDF Upload -->
+          <div class="p-2 bg-purple-50/50 border border-purple-200 rounded text-xs flex justify-between items-center">
+            <div>
+              <span class="font-bold text-purple-900">📄 Upload Ground Route / Map PDF Attachment</span>
+              <p class="text-[10px] text-slate-500">Will be appended to the complete collated PDF package.</p>
             </div>
-            <div id="mImagePreview_${id}" class="mt-2 hidden text-emerald-700 text-[11px] font-semibold">✓ Map route attached!</div>
+            <input type="file" accept="application/pdf" onchange="handleSectionPdfUpload(event, ${id}, 'mileage')" class="text-[11px] text-slate-600" />
           </div>
         </div>
       `;
@@ -467,7 +615,7 @@
     function removeMileageRow(id) {
       const el = document.getElementById(`mileageRow_${id}`);
       if (el) el.remove();
-      delete mileageImages[id];
+      delete uploadedPdfs.mileage[id];
       calculateTotals();
       updateFieldHighlights();
     }
@@ -483,24 +631,6 @@
       url += `&travelmode=${mode}`;
 
       window.open(url, '_blank');
-    }
-
-    // --- Image Screenshot Reader ---
-    function handleImageUpload(event, id, category) {
-      const file = event.target.files[0];
-      if (!file) return;
-
-      const reader = new FileReader();
-      reader.onload = function(e) {
-        if (category === 'flight') {
-          flightImages[id] = e.target.result;
-          document.getElementById(`flImagePreview_${id}`).classList.remove('hidden');
-        } else {
-          mileageImages[id] = e.target.result;
-          document.getElementById(`mImagePreview_${id}`).classList.remove('hidden');
-        }
-      };
-      reader.readAsDataURL(file);
     }
 
     // --- Dynamic Cost Centers ---
@@ -536,7 +666,37 @@
       updateFieldHighlights();
     }
 
-    // --- Calculation & Validation Engine ---
+    // --- Handle PDF Uploads ---
+    function handleSectionPdfUpload(event, id, section) {
+      const file = event.target.files[0];
+      if (!file) return;
+
+      const reader = new FileReader();
+      reader.onload = function(e) {
+        uploadedPdfs[section][id] = e.target.result;
+        alert(`✓ Supporting PDF attached for ${section} #${id}!`);
+      };
+      reader.readAsArrayBuffer(file);
+    }
+
+    function handleGeneralPdfUpload(event) {
+      const files = event.target.files;
+      if (!files.length) return;
+
+      const listContainer = document.getElementById('generalPdfList');
+      listContainer.innerHTML = '';
+
+      Array.from(files).forEach((file, idx) => {
+        const reader = new FileReader();
+        reader.onload = function(e) {
+          uploadedPdfs.general.push(e.target.result);
+          listContainer.insertAdjacentHTML('beforeend', `<div>✓ Attached: <strong>${file.name}</strong></div>`);
+        };
+        reader.readAsArrayBuffer(file);
+      });
+    }
+
+    // --- Calculation & Date Validation Engine ---
     function calculateTotals() {
       const banner = document.getElementById('dateValidationBanner');
       let validationErrors = [];
@@ -605,6 +765,8 @@
         mileageTotal += (dist * rate);
       });
 
+      const regFee = parseFloat(document.getElementById('conferenceRegFee').value) || 0;
+
       if (allLegs.length === 0) {
         document.getElementById('calcDays').innerText = "0";
         document.getElementById('calcBizDays').innerText = "0";
@@ -612,8 +774,8 @@
         document.getElementById('calcLodging').innerText = "0.00";
         document.getElementById('calcAirfareTotal').innerText = airfareTotal.toFixed(2);
         document.getElementById('calcMileageTotal').innerText = mileageTotal.toFixed(2);
-        document.getElementById('calcGrandTotal').innerText = (airfareTotal + mileageTotal).toFixed(2);
-        return { totalDays: 0, bizDays: 0, mealTotal: 0, lodgingTotal: 0, airfareTotal, mileageTotal, grandTotal: airfareTotal + mileageTotal, overallStart: '', overallEnd: '', legs: allLegs };
+        document.getElementById('calcGrandTotal').innerText = (airfareTotal + mileageTotal + regFee).toFixed(2);
+        return { totalDays: 0, bizDays: 0, mealTotal: 0, lodgingTotal: 0, airfareTotal, mileageTotal, regFee, grandTotal: airfareTotal + mileageTotal + regFee, overallStart: '', overallEnd: '', legs: allLegs };
       }
 
       const overallStart = allLegs[0].start;
@@ -644,7 +806,7 @@
         current.setDate(current.getDate() + 1);
       }
 
-      const grandTotal = mealTotal + lodgingTotal + airfareTotal + mileageTotal;
+      const grandTotal = mealTotal + lodgingTotal + airfareTotal + mileageTotal + regFee;
 
       document.getElementById('calcDays').innerText = totalDays;
       document.getElementById('calcBizDays').innerText = bizDays;
@@ -661,6 +823,7 @@
         lodgingTotal,
         airfareTotal,
         mileageTotal,
+        regFee,
         grandTotal,
         overallStart: allLegs[0].startStr,
         overallEnd: allLegs[allLegs.length - 1].endStr,
@@ -668,7 +831,7 @@
       };
     }
 
-    // --- FIXED Robust GSA API Fetcher (with Fiscal Year & State Fallback) ---
+    // --- Robust GSA API Fetcher ---
     async function fetchGSARatesForLeg(id) {
       const city = document.getElementById(`legCity_${id}`).value.trim();
       const state = document.getElementById(`legState_${id}`).value.trim().toUpperCase();
@@ -679,7 +842,6 @@
         return;
       }
 
-      // Calculate Federal Fiscal Year (Starts Oct 1)
       let fy = new Date().getFullYear();
       if (startDateVal) {
         const d = new Date(startDateVal);
@@ -691,18 +853,15 @@
       statusEl.classList.remove('hidden');
 
       try {
-        // Try City Endpoint First
         let response = await fetch(`https://api.gsa.gov/travel/perdiem/v2/rates/city/${encodeURIComponent(city)}/state/${state}/year/${fy}?api_key=DEMO_KEY`);
         let data = response.ok ? await response.json() : null;
 
-        // If City Endpoint fails or returns no match, Fallback to State Endpoint
         if (!data || !data.rates || data.rates.length === 0) {
           response = await fetch(`https://api.gsa.gov/travel/perdiem/v2/rates/state/${state}/year/${fy}?api_key=DEMO_KEY`);
           data = response.ok ? await response.json() : null;
         }
 
         if (data && data.rates && data.rates.length > 0) {
-          // Find matching city or fallback to first rate
           const rateData = data.rates.find(r => r.city && r.city.toLowerCase().includes(city.toLowerCase())) || data.rates[0];
           
           if (rateData.rate && rateData.rate[0]) {
@@ -720,7 +879,7 @@
             }
           }
 
-          statusEl.innerText = `✓ GSA Rates successfully set for ${rateData.city || city}, ${state}!`;
+          statusEl.innerText = `✓ GSA Rates set for ${rateData.city || city}, ${state}!`;
           calculateTotals();
         } else {
           statusEl.innerText = "⚠️ Standard rates applied for this location.";
@@ -736,8 +895,22 @@
         travelerName: document.getElementById('travelerName').value,
         taNumber: document.getElementById('taNumber').value,
         businessPurpose: document.getElementById('businessPurpose').value,
+        conferenceRegFee: document.getElementById('conferenceRegFee').value,
+        travelAdjustments: {
+          family: document.getElementById('adjFamily').checked,
+          familyNotes: document.getElementById('adjFamilyNotes').value,
+          sharedRoom: document.getElementById('adjSharedRoom').checked,
+          sharedRoomNotes: document.getElementById('adjSharedRoomNotes').value,
+          outsideOrg: document.getElementById('adjOutsideOrg').checked,
+          outsideOrgNotes: document.getElementById('adjOutsideOrgNotes').value,
+          personalTime: document.getElementById('adjPersonalTime').checked,
+          personalTimeNotes: document.getElementById('adjPersonalTimeNotes').value,
+          altLocation: document.getElementById('adjAltLocation').checked,
+          altLocationNotes: document.getElementById('adjAltLocationNotes').value,
+        },
         legs: [],
         flights: [],
+        hotels: [],
         mileageTrips: [],
         costCenters: []
       };
@@ -772,10 +945,22 @@
         });
       });
 
+      document.querySelectorAll('[id^="hotelRow_"]').forEach(row => {
+        const id = row.id.split('_')[1];
+        data.hotels.push({
+          name: document.getElementById(`htName_${id}`).value,
+          start: document.getElementById(`htStart_${id}`).value,
+          end: document.getElementById(`htEnd_${id}`).value,
+          rate: document.getElementById(`htRate_${id}`).value,
+          notes: document.getElementById(`htNotes_${id}`).value
+        });
+      });
+
       document.querySelectorAll('[id^="mileageRow_"]').forEach(row => {
         const id = row.id.split('_')[1];
         data.mileageTrips.push({
           mode: document.getElementById(`mMode_${id}`).value,
+          date: document.getElementById(`mDate_${id}`).value,
           origin: document.getElementById(`mOrigin_${id}`).value,
           dest: document.getElementById(`mDest_${id}`).value,
           dist: document.getElementById(`mDist_${id}`).value,
@@ -811,6 +996,7 @@
 
           document.getElementById('legsContainer').innerHTML = '';
           document.getElementById('flightsContainer').innerHTML = '';
+          document.getElementById('hotelsContainer').innerHTML = '';
           document.getElementById('mileageContainer').innerHTML = '';
           document.getElementById('costCentersContainer').innerHTML = '';
 
@@ -819,8 +1005,22 @@
             if (el && typeof data[key] !== 'object') el.value = data[key];
           });
 
+          if (data.travelAdjustments) {
+            document.getElementById('adjFamily').checked = !!data.travelAdjustments.family;
+            document.getElementById('adjFamilyNotes').value = data.travelAdjustments.familyNotes || '';
+            document.getElementById('adjSharedRoom').checked = !!data.travelAdjustments.sharedRoom;
+            document.getElementById('adjSharedRoomNotes').value = data.travelAdjustments.sharedRoomNotes || '';
+            document.getElementById('adjOutsideOrg').checked = !!data.travelAdjustments.outsideOrg;
+            document.getElementById('adjOutsideOrgNotes').value = data.travelAdjustments.outsideOrgNotes || '';
+            document.getElementById('adjPersonalTime').checked = !!data.travelAdjustments.personalTime;
+            document.getElementById('adjPersonalTimeNotes').value = data.travelAdjustments.personalTimeNotes || '';
+            document.getElementById('adjAltLocation').checked = !!data.travelAdjustments.altLocation;
+            document.getElementById('adjAltLocationNotes').value = data.travelAdjustments.altLocationNotes || '';
+          }
+
           if (data.legs && data.legs.length) data.legs.forEach(l => addLegRow(l)); else addLegRow();
           if (data.flights && data.flights.length) data.flights.forEach(f => addFlightRow(f)); else addFlightRow();
+          if (data.hotels && data.hotels.length) data.hotels.forEach(h => addHotelRow(h)); else addHotelRow();
           if (data.mileageTrips && data.mileageTrips.length) data.mileageTrips.forEach(m => addMileageRow(m)); else addMileageRow();
           if (data.costCenters && data.costCenters.length) data.costCenters.forEach(c => addCostCenterRow(c)); else addCostCenterRow();
 
@@ -873,6 +1073,7 @@
       setField('TRAVEL PERIOD', totals.overallStart);
       setField('to', totals.overallEnd);
 
+      // Per Diem & Expense Rows
       setField('MEALS Per Diem', `$${bizLegs[0]?.mealRate || 0}/day (Biz Legs)`);
       setField('DATES#0', `${totals.overallStart} - ${totals.overallEnd}`);
       setField('Total#0', totals.mealTotal.toFixed(2));
@@ -884,6 +1085,13 @@
       setField('DATES#2', totals.overallStart);
       setField('Total#2', totals.airfareTotal.toFixed(2));
 
+      // Meeting Registration Fee
+      if (totals.regFee > 0) {
+        setField('MEETING REGISTRATION', `Conference Fee`);
+        setField('DATES#5', totals.overallStart);
+        setField('Total#5', totals.regFee.toFixed(2));
+      }
+
       if (totals.mileageTotal > 0) {
         setField('PERSONAL CAR', `Reimbursement`);
         setField('DATES#7', `${totals.overallStart} - ${totals.overallEnd}`);
@@ -891,6 +1099,17 @@
       }
 
       setField('TOTAL#11', totals.grandTotal.toFixed(2));
+
+      // Non-Standard Situation Checkbox Auto-Trigger
+      const isNonStandard = document.getElementById('adjFamily').checked || 
+                            document.getElementById('adjSharedRoom').checked || 
+                            document.getElementById('adjOutsideOrg').checked || 
+                            document.getElementById('adjPersonalTime').checked || 
+                            document.getElementById('adjAltLocation').checked;
+      try {
+        const cb = form.getCheckBox('Nonstandard');
+        if (cb && isNonStandard) cb.check();
+      } catch(e) {}
 
       // Map ALL Cost Centers on Page 2
       const ccFields = [
@@ -932,7 +1151,7 @@
       }
     }
 
-    // --- Auxiliary Doc Definitions with Embedded Screenshots ---
+    // --- Auxiliary Doc Definitions ---
     function getGSADocDefinition() {
       const totals = calculateTotals();
       const bizLegs = totals.legs.filter(l => l.type === 'Business');
@@ -973,19 +1192,16 @@
 
     function getFlightCompDocDefinition() {
       const todayFormatted = new Date().toLocaleDateString('en-US', { year: 'numeric', month: 'long', day: 'numeric' });
-      let content = [
-        { text: 'SPACE SCIENCE INSTITUTE', style: 'agencyHeader', alignment: 'center' },
-        { text: 'Flight Comparison & Airfare Justification Sheet', style: 'header', alignment: 'center', margin: [0, 2, 0, 15] }
-      ];
-
       let tableBody = [
-        [{ text: 'Flight Route', bold: true }, { text: 'Selected Flight', bold: true }, { text: 'Price ($)', bold: true }, { text: 'Comparable Quote', bold: true }, { text: 'Comp Price ($)', bold: true }]
+        [{ text: 'Flight Route & Dates', bold: true }, { text: 'Selected Flight', bold: true }, { text: 'Price ($)', bold: true }, { text: 'Comparable Quote', bold: true }, { text: 'Comp Price ($)', bold: true }]
       ];
 
       document.querySelectorAll('[id^="flightRow_"]').forEach(row => {
         const id = row.id.split('_')[1];
+        const start = document.getElementById(`flStartDate_${id}`)?.value || '';
+        const end = document.getElementById(`flEndDate_${id}`)?.value || '';
         tableBody.push([
-          `${document.getElementById(`flOrigin_${id}`)?.value || ''} ➔ ${document.getElementById(`flDest_${id}`)?.value || ''}`,
+          `${document.getElementById(`flOrigin_${id}`)?.value || ''} ➔ ${document.getElementById(`flDest_${id}`)?.value || ''}\n(${start}${end ? ' to ' + end : ''})`,
           document.getElementById(`flSelCarrier_${id}`)?.value || 'Selected',
           `$${parseFloat(document.getElementById(`flSelPrice_${id}`)?.value || 0).toFixed(2)}`,
           document.getElementById(`flCompCarrier_${id}`)?.value || 'Comparable',
@@ -993,73 +1209,131 @@
         ]);
       });
 
-      content.push({ table: { widths: ['25%', '25%', '15%', '22%', '13%'], body: tableBody }, margin: [0, 0, 0, 15] });
-      content.push({ text: 'Evaluation Notice', style: 'sectionHeader' });
-      content.push({ text: `These prices were evaluated on ${todayFormatted}.`, fontSize: 10, italic: true, color: '#334155', margin: [0, 0, 0, 15] });
-
-      // Embed uploaded screenshots
-      Object.keys(flightImages).forEach(id => {
-        content.push({ text: `Google Flights Screenshot Proof (Flight #${id})`, style: 'sectionHeader' });
-        content.push({ image: flightImages[id], width: 480, alignment: 'center', margin: [0, 5, 0, 15] });
-      });
-
       return {
-        content,
+        content: [
+          { text: 'SPACE SCIENCE INSTITUTE', style: 'agencyHeader', alignment: 'center' },
+          { text: 'Flight Comparison & Airfare Justification Sheet', style: 'header', alignment: 'center', margin: [0, 2, 0, 15] },
+          { table: { widths: ['28%', '24%', '14%', '21%', '13%'], body: tableBody }, margin: [0, 0, 0, 15] },
+          { text: 'Evaluation Notice', style: 'sectionHeader' },
+          { text: `These prices were evaluated on ${todayFormatted}.`, fontSize: 10, italic: true, color: '#334155' }
+        ],
         styles: { agencyHeader: { fontSize: 10, color: '#64748b', bold: true }, header: { fontSize: 16, bold: true, color: '#1e293b' }, sectionHeader: { fontSize: 12, bold: true, margin: [0, 10, 0, 5], color: '#0f172a' } }
       };
     }
 
     function getMileageDocDefinition() {
-      let content = [
-        { text: 'SPACE SCIENCE INSTITUTE', style: 'agencyHeader', alignment: 'center' },
-        { text: 'Personal Vehicle & Ground Transportation Summary', style: 'header', alignment: 'center', margin: [0, 2, 0, 15] }
-      ];
-
       let tableBody = [
-        [{ text: 'Route (Origin ➔ Destination)', bold: true }, { text: 'Miles', bold: true }, { text: 'Rate', bold: true }, { text: 'Reimbursement', bold: true }]
+        [{ text: 'Date', bold: true }, { text: 'Route (Origin ➔ Destination)', bold: true }, { text: 'Miles', bold: true }, { text: 'Rate', bold: true }, { text: 'Reimbursement', bold: true }]
       ];
 
       document.querySelectorAll('[id^="mileageRow_"]').forEach(row => {
         const id = row.id.split('_')[1];
+        const date = document.getElementById(`mDate_${id}`)?.value || 'N/A';
         const dist = parseFloat(document.getElementById(`mDist_${id}`)?.value) || 0;
         const rate = parseFloat(document.getElementById(`mRate_${id}`)?.value) || 0;
         tableBody.push([
+          date,
           `${document.getElementById(`mOrigin_${id}`)?.value || ''} ➔ ${document.getElementById(`mDest_${id}`)?.value || ''}`,
           `${dist} mi`, `$${rate.toFixed(3)}/mi`, `$${(dist * rate).toFixed(2)}`
         ]);
       });
 
-      content.push({ table: { widths: ['45%', '15%', '15%', '25%'], body: tableBody }, margin: [0, 0, 0, 15] });
-
-      // Embed uploaded map route screenshots
-      Object.keys(mileageImages).forEach(id => {
-        content.push({ text: `Google Maps Route Proof (Trip #${id})`, style: 'sectionHeader' });
-        content.push({ image: mileageImages[id], width: 480, alignment: 'center', margin: [0, 5, 0, 15] });
-      });
-
       return {
-        content,
+        content: [
+          { text: 'SPACE SCIENCE INSTITUTE', style: 'agencyHeader', alignment: 'center' },
+          { text: 'Personal Vehicle & Ground Transportation Summary', style: 'header', alignment: 'center', margin: [0, 2, 0, 15] },
+          { table: { widths: ['15%', '40%', '12%', '13%', '20%'], body: tableBody }, margin: [0, 0, 0, 15] }
+        ],
         styles: { agencyHeader: { fontSize: 10, color: '#64748b', bold: true }, header: { fontSize: 16, bold: true, color: '#1e293b' }, sectionHeader: { fontSize: 12, bold: true, margin: [0, 10, 0, 5], color: '#0f172a' } }
       };
     }
 
+    // --- Chronological Itinerary Summary PDF Generator ---
     function getItineraryDocDefinition() {
       const totals = calculateTotals();
       const name = document.getElementById('travelerName').value || 'N/A';
       const purpose = document.getElementById('businessPurpose').value || 'N/A';
 
-      let legRows = [
-        [{ text: 'Dates', bold: true }, { text: 'Type', bold: true }, { text: 'Destination', bold: true }]
-      ];
+      // Build Chronological Events List
+      let timelineEvents = [];
 
+      // Add Legs
       totals.legs.forEach(leg => {
-        legRows.push([`${leg.startStr} to ${leg.endStr}`, leg.type, `${leg.city}, ${leg.state}`]);
+        timelineEvents.push({
+          date: leg.startStr,
+          type: 'Leg',
+          summary: `${leg.type === 'Business' ? '💼' : '🏖️'} Trip Leg: ${leg.city}, ${leg.state} (${leg.startStr} to ${leg.endStr})`
+        });
       });
+
+      // Add Flights
+      document.querySelectorAll('[id^="flightRow_"]').forEach(row => {
+        const id = row.id.split('_')[1];
+        const date = document.getElementById(`flStartDate_${id}`)?.value || 'N/A';
+        const orig = document.getElementById(`flOrigin_${id}`)?.value || '';
+        const dest = document.getElementById(`flDest_${id}`)?.value || '';
+        const carrier = document.getElementById(`flSelCarrier_${id}`)?.value || '';
+        const price = document.getElementById(`flSelPrice_${id}`)?.value || '0.00';
+
+        timelineEvents.push({
+          date,
+          type: 'Flight',
+          summary: `✈️ Flight: ${orig} ➔ ${dest} (${carrier}, $${price})`
+        });
+      });
+
+      // Add Hotels
+      document.querySelectorAll('[id^="hotelRow_"]').forEach(row => {
+        const id = row.id.split('_')[1];
+        const start = document.getElementById(`htStart_${id}`)?.value || 'N/A';
+        const end = document.getElementById(`htEnd_${id}`)?.value || '';
+        const hName = document.getElementById(`htName_${id}`)?.value || 'Hotel Stay';
+        const rate = document.getElementById(`htRate_${id}`)?.value || '0.00';
+
+        timelineEvents.push({
+          date: start,
+          type: 'Hotel',
+          summary: `🏨 Hotel: ${hName} (${start} to ${end}, $${rate}/night)`
+        });
+      });
+
+      // Add Mileage
+      document.querySelectorAll('[id^="mileageRow_"]').forEach(row => {
+        const id = row.id.split('_')[1];
+        const date = document.getElementById(`mDate_${id}`)?.value || 'N/A';
+        const orig = document.getElementById(`mOrigin_${id}`)?.value || '';
+        const dest = document.getElementById(`mDest_${id}`)?.value || '';
+        const dist = document.getElementById(`mDist_${id}`)?.value || '0';
+
+        timelineEvents.push({
+          date,
+          type: 'Ground',
+          summary: `🚗 Ground/Car Trip: ${orig} ➔ ${dest} (${dist} roundtrip miles)`
+        });
+      });
+
+      // Sort Chronologically by Date
+      timelineEvents.sort((a, b) => (a.date > b.date ? 1 : -1));
+
+      let timelineTable = [
+        [{ text: 'Date', bold: true }, { text: 'Event Description', bold: true }]
+      ];
+      timelineEvents.forEach(e => {
+        timelineTable.push([e.date, e.summary]);
+      });
+
+      // Travel Adjustments Checklist Items
+      let adjItems = [];
+      if (document.getElementById('adjFamily').checked) adjItems.push(`• Partner/Family Traveling: ${document.getElementById('adjFamilyNotes').value || 'Yes'}`);
+      if (document.getElementById('adjSharedRoom').checked) adjItems.push(`• Shared Rooming: ${document.getElementById('adjSharedRoomNotes').value || 'Yes'}`);
+      if (document.getElementById('adjOutsideOrg').checked) adjItems.push(`• Outside Org Support: ${document.getElementById('adjOutsideOrgNotes').value || 'Yes'}`);
+      if (document.getElementById('adjPersonalTime').checked) adjItems.push(`• Personal Time Added: ${document.getElementById('adjPersonalTimeNotes').value || 'Yes'}`);
+      if (document.getElementById('adjAltLocation').checked) adjItems.push(`• Non-Home Departure/Arrival: ${document.getElementById('adjAltLocationNotes').value || 'Yes'}`);
 
       return {
         content: [
           { text: 'SPACE SCIENCE INSTITUTE', style: 'header', alignment: 'center' },
-          { text: 'Travel Itinerary & Summary Report', style: 'subheader', alignment: 'center', margin: [0, 2, 0, 15] },
+          { text: 'Travel Itinerary & Comprehensive Summary', style: 'subheader', alignment: 'center', margin: [0, 2, 0, 15] },
           {
             table: {
               widths: ['30%', '70%'],
@@ -1071,8 +1345,12 @@
             },
             layout: 'lightHorizontalLines', margin: [0, 0, 0, 15]
           },
-          { text: 'Trip Legs Breakdown', style: 'sectionHeader' },
-          { table: { widths: ['35%', '25%', '40%'], body: legRows }, margin: [0, 5, 0, 15] },
+          { text: 'Chronological Trip Itinerary Timeline', style: 'sectionHeader' },
+          { table: { widths: ['25%', '75%'], body: timelineTable }, margin: [0, 5, 0, 15] },
+
+          adjItems.length ? { text: 'Travel Adjustments & Non-Standard Situations', style: 'sectionHeader' } : {},
+          adjItems.length ? { ul: adjItems, fontSize: 10, margin: [0, 0, 0, 15] } : {},
+
           { text: 'Estimated Expense Summary', style: 'sectionHeader' },
           {
             table: {
@@ -1081,6 +1359,7 @@
                 ['Meals Total (Business Days)', `$${totals.mealTotal.toFixed(2)}`],
                 ['Lodging Total (Business Days)', `$${totals.lodgingTotal.toFixed(2)}`],
                 ['Airfare Total', `$${totals.airfareTotal.toFixed(2)}`],
+                ['Meeting Registration Fee', `$${totals.regFee.toFixed(2)}`],
                 ['Ground Mileage Total', `$${totals.mileageTotal.toFixed(2)}`],
                 [{ text: 'Total Estimated Expenses', bold: true }, { text: `$${totals.grandTotal.toFixed(2)}`, bold: true }]
               ]
@@ -1092,7 +1371,7 @@
       };
     }
 
-    // --- Auxiliary PDF Downloads ---
+    // --- Individual PDF Downloads ---
     function generateGSARateSheetPDF() {
       const biz = calculateTotals().legs.filter(l => l.type === 'Business')[0] || { city: 'Destination', state: 'ST' };
       pdfMake.createPdf(getGSADocDefinition()).download(`GSA_PerDiem_Rates_${biz.city}_${biz.state}.pdf`);
@@ -1113,7 +1392,7 @@
       pdfMake.createPdf(getItineraryDocDefinition()).download(`TA_Itinerary_${name.replace(/\s+/g, '_')}.pdf`);
     }
 
-    // --- Collated Multi-Document PDF Generator ---
+    // --- Collated Package PDF Generator (Merges PDF Attachments) ---
     async function generateCollatedPackagePDF() {
       try {
         const masterPdf = await PDFLib.PDFDocument.create();
@@ -1135,11 +1414,28 @@
           });
         };
 
-        // 2. Auxiliary Attachments (with embedded images)
+        // Helper to append uploaded raw PDF ArrayBuffers
+        const appendRawPdfBytes = async (bytes) => {
+          try {
+            const doc = await PDFLib.PDFDocument.load(bytes);
+            const pages = await masterPdf.copyPages(doc, doc.getPageIndices());
+            pages.forEach(p => masterPdf.addPage(p));
+          } catch(e) {
+            console.warn("Could not merge PDF attachment:", e.message);
+          }
+        };
+
+        // 2. Auxiliary Summaries
         await appendPdfMake(getItineraryDocDefinition());
         await appendPdfMake(getGSADocDefinition());
         await appendPdfMake(getFlightCompDocDefinition());
         await appendPdfMake(getMileageDocDefinition());
+
+        // 3. User-Uploaded Section PDFs
+        for (const id in uploadedPdfs.flights) await appendRawPdfBytes(uploadedPdfs.flights[id]);
+        for (const id in uploadedPdfs.hotels) await appendRawPdfBytes(uploadedPdfs.hotels[id]);
+        for (const id in uploadedPdfs.mileage) await appendRawPdfBytes(uploadedPdfs.mileage[id]);
+        for (const bytes of uploadedPdfs.general) await appendRawPdfBytes(bytes);
 
         const mergedBytes = await masterPdf.save();
         const name = document.getElementById('travelerName').value || 'Traveler';
@@ -1158,6 +1454,7 @@
     window.addEventListener('DOMContentLoaded', () => {
       addLegRow();
       addFlightRow();
+      addHotelRow();
       addMileageRow();
       addCostCenterRow();
     });
