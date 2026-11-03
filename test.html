@@ -7,12 +7,12 @@
   <title>SSI Travel Authorization &amp; Itinerary Assistant</title>
 
   <!-- Tailwind CSS -->
-  <script src="SSI%20Travel%20Authorization%20&amp;%20Itinerary%20Assistant_files/3.4_ZSbQ.17"></script>
+  <script src="https://cdn.tailwindcss.com"></script>
   <!-- pdf-lib for filling AcroForms and merging PDFs -->
-  <script src="SSI%20Travel%20Authorization%20&amp;%20Itinerary%20Assistant_files/pdf-lib.min_ZSbQ.js"></script>
+  <script src="https://unpkg.com/pdf-lib@1.17.1/dist/pdf-lib.min.js"></script>
   <!-- pdfmake for generating auxiliary PDFs -->
-  <script src="SSI%20Travel%20Authorization%20&amp;%20Itinerary%20Assistant_files/pdfmake.min_ZSbQ.js"></script>
-  <script src="SSI%20Travel%20Authorization%20&amp;%20Itinerary%20Assistant_files/vfs_fonts_ZSbQ.js"></script>
+  <script src="https://cdnjs.cloudflare.com/ajax/libs/pdfmake/0.2.7/pdfmake.min.js"></script>
+  <script src="https://cdnjs.cloudflare.com/ajax/libs/pdfmake/0.2.7/vfs_fonts.js"></script>
   
   <style>
     /* Visual Checklist: Soft pink when empty, soft green when filled */
@@ -244,10 +244,10 @@
 
     <form id="taForm" class="space-y-6" onsubmit="event.preventDefault();">
       
-      <!-- 1. General Traveler Info -->
+      <!-- 1. General Traveler Info & Itinerary Notes -->
       <section>
-        <h2 class="text-lg font-semibold text-slate-700 mb-3 border-b pb-1">1. Traveler Info</h2>
-        <div class="grid grid-cols-1 md:grid-cols-3 gap-4">
+        <h2 class="text-lg font-semibold text-slate-700 mb-3 border-b pb-1">1. Traveler Info &amp; Itinerary Notes</h2>
+        <div class="grid grid-cols-1 md:grid-cols-3 gap-4 mb-3">
           <div>
             <label class="block text-xs font-semibold text-slate-600 mb-1">Traveler Name (First Last)</label>
             <input type="text" id="travelerName" placeholder="Jane Doe" class="chk-input w-full border rounded p-2 text-sm field-filled" required="" value="Kristina Collins">
@@ -260,6 +260,10 @@
             <label class="block text-xs font-semibold text-slate-600 mb-1">Overall Business Purpose</label>
             <input type="text" id="businessPurpose" placeholder="AGU Conference Presentation" class="chk-input w-full border rounded p-2 text-sm field-empty" required="">
           </div>
+        </div>
+        <div>
+          <label class="block text-xs font-semibold text-slate-600 mb-1">General Itinerary Notes &amp; Special Instructions</label>
+          <textarea id="itineraryNotes" rows="2" placeholder="e.g. Talk schedule (Thurs 10 AM, Room 302), ground contact phone numbers, emergency instructions, local transit pass details..." class="chk-input w-full border rounded p-2 text-xs field-empty"></textarea>
         </div>
       </section>
 
@@ -291,7 +295,7 @@
         </div>
       </section>
 
-      <!-- 3. Conference Registration & Fees (NEW SECTION) -->
+      <!-- 3. Conference Registration & Fees -->
       <section class="border p-4 rounded-lg bg-white border-slate-200">
         <div class="flex justify-between items-center mb-3">
           <div>
@@ -465,6 +469,14 @@
   </div>
 
   <script>
+    // --- Helper to safely resolve PDFLib object across standard CDN builds ---
+    function getPDFLib() {
+      if (typeof PDFLib !== 'undefined') return PDFLib;
+      if (typeof window.PDFLib !== 'undefined') return window.PDFLib;
+      if (typeof window.pdfLib !== 'undefined') return window.pdfLib;
+      throw new Error("PDFLib library failed to load. Please check your internet connection.");
+    }
+
     let legCounter = 0;
     let conferenceCounter = 0;
     let flightCounter = 0;
@@ -626,7 +638,7 @@
             </div>
           </div>
 
-          <!-- Sub-section: Additional Fees (Populates TA "Other-Specify") -->
+          <!-- Additional Fees -->
           <div class="bg-white p-2.5 rounded border border-slate-200 space-y-2">
             <div class="flex justify-between items-center">
               <div>
@@ -643,7 +655,6 @@
       `;
 
       container.insertAdjacentHTML('beforeend', html);
-
       addFees.forEach(f => addConfFeeItem(id, f.name, f.amt));
       updateFieldHighlights();
       calculateTotals();
@@ -1079,7 +1090,6 @@
         const regFee = parseFloat(document.getElementById(`confRegFee_${id}`)?.value) || 0;
         totalConfRegFee += regFee;
 
-        // Parse fee items within this conference
         const feeNames = row.querySelectorAll('.conf-fee-name');
         const feeAmts = row.querySelectorAll('.conf-fee-amt');
         feeNames.forEach((nEl, idx) => {
@@ -1226,6 +1236,7 @@
         travelerName: document.getElementById('travelerName').value,
         taNumber: document.getElementById('taNumber').value,
         businessPurpose: document.getElementById('businessPurpose').value,
+        itineraryNotes: document.getElementById('itineraryNotes').value,
         travelAdjustments: {
           family: document.getElementById('adjFamily').checked,
           familyNotes: document.getElementById('adjFamilyNotes').value,
@@ -1400,8 +1411,9 @@
 
     // --- Fill TA PDF Template ---
     async function getFilledTABytes() {
+      const lib = getPDFLib();
       const bytes = await getTemplateBytes();
-      const pdfDoc = await PDFLib.PDFDocument.load(bytes);
+      const pdfDoc = await lib.PDFDocument.load(bytes);
       const form = pdfDoc.getForm();
       const totals = calculateTotals();
 
@@ -1617,6 +1629,7 @@
       const totals = calculateTotals();
       const name = document.getElementById('travelerName').value || 'N/A';
       const purpose = document.getElementById('businessPurpose').value || 'N/A';
+      const notes = document.getElementById('itineraryNotes')?.value?.trim();
 
       let timelineEvents = [];
 
@@ -1725,7 +1738,7 @@
       // Sort Events Chronologically
       timelineEvents.sort((a, b) => (a.date > b.date ? 1 : a.date < b.date ? -1 : 0));
 
-      // Group Events by Date for Narrative Cleanliness
+      // Group Events by Date
       const groupedMap = {};
       timelineEvents.forEach(e => {
         if (!groupedMap[e.date]) groupedMap[e.date] = [];
@@ -1767,6 +1780,9 @@
           },
           { text: 'Narrative Chronological Travel Timeline', style: 'sectionHeader' },
           { table: { widths: ['30%', '70%'], body: timelineTable }, margin: [0, 5, 0, 15] },
+
+          notes ? { text: 'General Itinerary Notes & Special Instructions', style: 'sectionHeader' } : {},
+          notes ? { text: notes, fontSize: 9.5, margin: [0, 2, 0, 15], color: '#334155' } : {},
 
           adjItems.length ? { text: 'Travel Adjustments & Non-Standard Situations', style: 'sectionHeader' } : {},
           adjItems.length ? { ul: adjItems, fontSize: 10, margin: [0, 0, 0, 15] } : {},
@@ -1816,17 +1832,18 @@
     // --- Collated PDF Package Generator ---
     async function generateCollatedPackagePDF() {
       try {
-        const masterPdf = await PDFLib.PDFDocument.create();
+        const lib = getPDFLib();
+        const masterPdf = await lib.PDFDocument.create();
 
         const taBytes = await getFilledTABytes();
-        const taDoc = await PDFLib.PDFDocument.load(taBytes);
+        const taDoc = await lib.PDFDocument.load(taBytes);
         const taPages = await masterPdf.copyPages(taDoc, taDoc.getPageIndices());
         taPages.forEach(p => masterPdf.addPage(p));
 
         const appendPdfMake = (docDef) => {
           return new Promise((resolve) => {
             pdfMake.createPdf(docDef).getBuffer(async (buffer) => {
-              const doc = await PDFLib.PDFDocument.load(buffer);
+              const doc = await lib.PDFDocument.load(buffer);
               const pages = await masterPdf.copyPages(doc, doc.getPageIndices());
               pages.forEach(p => masterPdf.addPage(p));
               resolve();
@@ -1836,7 +1853,7 @@
 
         const appendRawPdfBytes = async (bytes) => {
           try {
-            const doc = await PDFLib.PDFDocument.load(bytes);
+            const doc = await lib.PDFDocument.load(bytes);
             const pages = await masterPdf.copyPages(doc, doc.getPageIndices());
             pages.forEach(p => masterPdf.addPage(p));
           } catch(e) {
