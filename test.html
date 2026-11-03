@@ -1541,7 +1541,10 @@
       setField('DATES#0', `${totals.overallStart} - ${totals.overallEnd}`);
       setField('Total#0', totals.mealTotal.toFixed(2));
 
-      setField('LODGING Per Diem', `$${bizLegs[0]?.lodgingRate || 0}/night (Biz Legs)`);
+      // Lodging Per Diem & Rate column fill
+      const lodgingRateVal = bizLegs[0]?.lodgingRate ? `$${bizLegs[0].lodgingRate}` : '';
+      setField('undefined', lodgingRateVal);
+      setField('LODGING Per Diem', lodgingRateVal);
       setField('DATES#1', `${totals.overallStart} - ${totals.overallEnd}`);
       setField('Total#1', totals.lodgingTotal.toFixed(2));
 
@@ -1990,8 +1993,18 @@
 
         await appendPdfMake(getItineraryDocDefinition());
         await appendPdfMake(getGSADocDefinition());
-        await appendPdfMake(getFlightCompDocDefinition());
-        await appendPdfMake(getMileageDocDefinition());
+
+        // Only append Flight Summary if flight entries exist
+        const hasFlights = document.querySelectorAll('[id^="flightRow_"]').length > 0;
+        if (hasFlights) {
+          await appendPdfMake(getFlightCompDocDefinition());
+        }
+
+        // Only append Ground Transportation Summary if mileage/ground entries exist
+        const hasMileage = document.querySelectorAll('[id^="mileageRow_"]').length > 0;
+        if (hasMileage) {
+          await appendPdfMake(getMileageDocDefinition());
+        }
 
         for (const id in uploadedPdfs.flights) await appendRawPdfBytes(uploadedPdfs.flights[id]);
         for (const id in uploadedPdfs.hotels) await appendRawPdfBytes(uploadedPdfs.hotels[id]);
