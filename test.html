@@ -381,6 +381,17 @@
             </div>
           </div>
 
+          <!-- Sub-checkbox for Shared Room Cost Verification -->
+          <div class="grid grid-cols-1 md:grid-cols-12 gap-2 items-center bg-white p-2 rounded border ml-4 border-l-4 border-l-indigo-300">
+            <div class="md:col-span-5 flex items-center gap-2">
+              <input type="checkbox" id="adjSharedRoomNoDiff" class="rounded text-indigo-600">
+              <label for="adjSharedRoomNoDiff" class="font-semibold text-slate-700">Verified: No difference in hotel cost between single and double occupancy</label>
+            </div>
+            <div class="md:col-span-7">
+              <input type="text" id="adjSharedRoomNoDiffNotes" value="See attached PDF for price comparison" placeholder="See attached PDF for price comparison" class="chk-input w-full border rounded p-1 text-xs field-filled">
+            </div>
+          </div>
+
           <div class="grid grid-cols-1 md:grid-cols-12 gap-2 items-center bg-white p-2 rounded border">
             <div class="md:col-span-5 flex items-center gap-2">
               <input type="checkbox" id="adjOutsideOrg" class="rounded text-indigo-600">
@@ -408,6 +419,17 @@
             </div>
             <div class="md:col-span-7">
               <input type="text" id="adjAltLocationNotes" placeholder="Notes (e.g. Departing from field site in SFO)" class="chk-input w-full border rounded p-1 text-xs field-empty">
+            </div>
+          </div>
+
+          <!-- Other Non-Standard Situation -->
+          <div class="grid grid-cols-1 md:grid-cols-12 gap-2 items-center bg-white p-2 rounded border">
+            <div class="md:col-span-5 flex items-center gap-2">
+              <input type="checkbox" id="adjOther" class="rounded text-indigo-600">
+              <label for="adjOther" class="font-semibold text-slate-700">Other non-standard situation</label>
+            </div>
+            <div class="md:col-span-7">
+              <input type="text" id="adjOtherNotes" placeholder="Notes / details" class="chk-input w-full border rounded p-1 text-xs field-empty">
             </div>
           </div>
         </div>
@@ -1309,12 +1331,16 @@
           familyNotes: document.getElementById('adjFamilyNotes').value,
           sharedRoom: document.getElementById('adjSharedRoom').checked,
           sharedRoomNotes: document.getElementById('adjSharedRoomNotes').value,
+          sharedRoomNoDiff: document.getElementById('adjSharedRoomNoDiff').checked,
+          sharedRoomNoDiffNotes: document.getElementById('adjSharedRoomNoDiffNotes').value,
           outsideOrg: document.getElementById('adjOutsideOrg').checked,
           outsideOrgNotes: document.getElementById('adjOutsideOrgNotes').value,
           personalTime: document.getElementById('adjPersonalTime').checked,
           personalTimeNotes: document.getElementById('adjPersonalTimeNotes').value,
           altLocation: document.getElementById('adjAltLocation').checked,
           altLocationNotes: document.getElementById('adjAltLocationNotes').value,
+          other: document.getElementById('adjOther').checked,
+          otherNotes: document.getElementById('adjOtherNotes').value,
         },
         legs: [],
         conferences: [],
@@ -1442,12 +1468,16 @@
             document.getElementById('adjFamilyNotes').value = data.travelAdjustments.familyNotes || '';
             document.getElementById('adjSharedRoom').checked = !!data.travelAdjustments.sharedRoom;
             document.getElementById('adjSharedRoomNotes').value = data.travelAdjustments.sharedRoomNotes || '';
+            document.getElementById('adjSharedRoomNoDiff').checked = !!data.travelAdjustments.sharedRoomNoDiff;
+            document.getElementById('adjSharedRoomNoDiffNotes').value = data.travelAdjustments.sharedRoomNoDiffNotes || 'See attached PDF for price comparison';
             document.getElementById('adjOutsideOrg').checked = !!data.travelAdjustments.outsideOrg;
             document.getElementById('adjOutsideOrgNotes').value = data.travelAdjustments.outsideOrgNotes || '';
             document.getElementById('adjPersonalTime').checked = !!data.travelAdjustments.personalTime;
             document.getElementById('adjPersonalTimeNotes').value = data.travelAdjustments.personalTimeNotes || '';
             document.getElementById('adjAltLocation').checked = !!data.travelAdjustments.altLocation;
             document.getElementById('adjAltLocationNotes').value = data.travelAdjustments.altLocationNotes || '';
+            document.getElementById('adjOther').checked = !!data.travelAdjustments.other;
+            document.getElementById('adjOtherNotes').value = data.travelAdjustments.otherNotes || '';
           }
 
           if (data.legs && data.legs.length) data.legs.forEach(l => addLegRow(l)); else addLegRow();
@@ -1540,9 +1570,11 @@
 
       const isNonStandard = document.getElementById('adjFamily').checked || 
                             document.getElementById('adjSharedRoom').checked || 
+                            document.getElementById('adjSharedRoomNoDiff').checked || 
                             document.getElementById('adjOutsideOrg').checked || 
                             document.getElementById('adjPersonalTime').checked || 
-                            document.getElementById('adjAltLocation').checked;
+                            document.getElementById('adjAltLocation').checked || 
+                            document.getElementById('adjOther').checked;
       try {
         const cb = form.getCheckBox('Nonstandard');
         if (cb && isNonStandard) cb.check();
@@ -1693,6 +1725,13 @@
       return dt.toLocaleDateString('en-US', { weekday: 'short', month: 'short', day: 'numeric' });
     }
 
+    // --- Helper to assign intra-day priority (1: Outbound, 2: General/Hotel/Conf, 3: Return) ---
+    function getEventPriority(desc) {
+      if (desc.startsWith('Outbound Flight:') || desc.startsWith('One-Way Flight:')) return 1;
+      if (desc.startsWith('Return Flight:')) return 3;
+      return 2;
+    }
+
     // --- Narrative Chronological Itinerary Generator ---
     function getItineraryDocDefinition() {
       const totals = calculateTotals();
@@ -1700,21 +1739,16 @@
       const purpose = document.getElementById('businessPurpose').value || 'N/A';
       const notes = document.getElementById('itineraryNotes')?.value?.trim();
 
-      let timelineEvents = [];
-
-      // Parse Legs
+      // 1. Legs Bulleted List (Outside the table)
+      let legBulletItems = [];
       totals.legs.forEach(leg => {
         const legTypeLabel = leg.type === 'Business' ? 'Business Leg' : 'Personal Leg';
-        const legLabel = `${legTypeLabel}: ${leg.city}, ${leg.state}${leg.purpose ? ' (' + leg.purpose + ')' : ''}`;
-        if (leg.startStr === leg.endStr) {
-          timelineEvents.push({ date: leg.startStr, desc: legLabel });
-        } else {
-          timelineEvents.push({
-            date: leg.startStr,
-            desc: `Start ${legLabel} (thru ${formatDateWithDay(leg.endStr)})`
-          });
-        }
+        const legStr = `${legTypeLabel}: ${leg.city}, ${leg.state}${leg.purpose ? ' (' + leg.purpose + ')' : ''} [${formatDateWithDay(leg.startStr)} to ${formatDateWithDay(leg.endStr)}]`;
+        legBulletItems.push(legStr);
       });
+
+      // 2. Timeline Events for Table
+      let timelineEvents = [];
 
       // Parse Conferences Chronologically
       document.querySelectorAll('[id^="confRow_"]').forEach(row => {
@@ -1745,7 +1779,7 @@
         }
       });
 
-      // Parse Flights Chronologically (including Both Outbound & Return Days)
+      // Parse Flights Chronologically
       document.querySelectorAll('[id^="flightRow_"]').forEach(row => {
         const id = row.id.split('_')[1];
         const start = document.getElementById(`flStartDate_${id}`)?.value;
@@ -1815,9 +1849,6 @@
         }
       });
 
-      // Sort Events Chronologically
-      timelineEvents.sort((a, b) => (a.date > b.date ? 1 : a.date < b.date ? -1 : 0));
-
       // Group Events by Date
       const groupedMap = {};
       timelineEvents.forEach(e => {
@@ -1829,19 +1860,31 @@
         [{ text: 'Date / Day', bold: true }, { text: 'Scheduled Travel Events', bold: true }]
       ];
 
-      Object.keys(groupedMap).forEach(dStr => {
+      // Sort dates chronologically
+      const sortedDates = Object.keys(groupedMap).sort();
+
+      sortedDates.forEach(dStr => {
         const formattedDay = formatDateWithDay(dStr);
-        const narrative = groupedMap[dStr].join('; ');
-        timelineTable.push([{ text: formattedDay, bold: true }, narrative]);
+        let dayEvents = groupedMap[dStr];
+
+        // Sort intra-day events: Outbound flight at top (1), Activities middle (2), Return flight at bottom (3)
+        dayEvents.sort((a, b) => getEventPriority(a) - getEventPriority(b));
+
+        timelineTable.push([
+          { text: formattedDay, bold: true },
+          { ul: dayEvents, fontSize: 9.5 }
+        ]);
       });
 
-      // Travel Adjustments
+      // Travel Adjustments Checklist
       let adjItems = [];
-      if (document.getElementById('adjFamily').checked) adjItems.push(`Partner/Family Traveling: ${document.getElementById('adjFamilyNotes').value || 'Yes'}`);
-      if (document.getElementById('adjSharedRoom').checked) adjItems.push(`Shared Rooming: ${document.getElementById('adjSharedRoomNotes').value || 'Yes'}`);
-      if (document.getElementById('adjOutsideOrg').checked) adjItems.push(`Outside Org Support: ${document.getElementById('adjOutsideOrgNotes').value || 'Yes'}`);
-      if (document.getElementById('adjPersonalTime').checked) adjItems.push(`Personal Time Added: ${document.getElementById('adjPersonalTimeNotes').value || 'Yes'}`);
-      if (document.getElementById('adjAltLocation').checked) adjItems.push(`Non-Home Departure/Arrival: ${document.getElementById('adjAltLocationNotes').value || 'Yes'}`);
+      if (document.getElementById('adjFamily')?.checked) adjItems.push(`Partner/Family Traveling: ${document.getElementById('adjFamilyNotes').value || 'Yes'}`);
+      if (document.getElementById('adjSharedRoom')?.checked) adjItems.push(`Shared Rooming: ${document.getElementById('adjSharedRoomNotes').value || 'Yes'}`);
+      if (document.getElementById('adjSharedRoomNoDiff')?.checked) adjItems.push(`Verified: No difference in hotel cost between single and double occupancy: ${document.getElementById('adjSharedRoomNoDiffNotes').value || 'See attached PDF for price comparison'}`);
+      if (document.getElementById('adjOutsideOrg')?.checked) adjItems.push(`Outside Org Support: ${document.getElementById('adjOutsideOrgNotes').value || 'Yes'}`);
+      if (document.getElementById('adjPersonalTime')?.checked) adjItems.push(`Personal Time Added: ${document.getElementById('adjPersonalTimeNotes').value || 'Yes'}`);
+      if (document.getElementById('adjAltLocation')?.checked) adjItems.push(`Non-Home Departure/Arrival: ${document.getElementById('adjAltLocationNotes').value || 'Yes'}`);
+      if (document.getElementById('adjOther')?.checked) adjItems.push(`Other non-standard situation: ${document.getElementById('adjOtherNotes').value || 'Yes'}`);
 
       return {
         content: [
@@ -1858,6 +1901,10 @@
             },
             layout: 'lightHorizontalLines', margin: [0, 0, 0, 15]
           },
+
+          legBulletItems.length ? { text: 'Trip Legs & Destinations', style: 'sectionHeader' } : {},
+          legBulletItems.length ? { ul: legBulletItems, fontSize: 10, margin: [0, 2, 0, 15] } : {},
+
           { text: 'Narrative Chronological Travel Timeline', style: 'sectionHeader' },
           { table: { widths: ['30%', '70%'], body: timelineTable }, margin: [0, 5, 0, 15] },
 
