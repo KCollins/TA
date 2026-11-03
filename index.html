@@ -76,6 +76,7 @@
     .mb-2{margin-bottom:0.5rem}
     .mb-3{margin-bottom:0.75rem}
     .mb-6{margin-bottom:1.5rem}
+    .mt-1{margin-top:0.25rem}
     .mt-2{margin-top:0.5rem}
     .mt-4{margin-top:1rem}
     .mb-0\.5{margin-bottom:0.125rem}
@@ -89,6 +90,7 @@
     .grid-cols-1{grid-template-columns:repeat(1, minmax(0, 1fr))}
     .flex-wrap{flex-wrap:wrap}
     .items-center{align-items:center}
+    .items-start{align-items:flex-start}
     .justify-between{justify-content:space-between}
     .gap-2{gap:0.5rem}
     .gap-3{gap:0.75rem}
@@ -171,6 +173,7 @@
     .font-bold{font-weight:700}
     .font-medium{font-weight:500}
     .font-semibold{font-weight:600}
+    .leading-relaxed{line-height:1.625}
     .text-amber-700{--tw-text-opacity:1;color:rgb(180 83 9 / var(--tw-text-opacity, 1))}
     .text-amber-800{--tw-text-opacity:1;color:rgb(146 64 14 / var(--tw-text-opacity, 1))}
     .text-blue-700{--tw-text-opacity:1;color:rgb(29 78 216 / var(--tw-text-opacity, 1))}
@@ -225,7 +228,7 @@
     <header class="border-b pb-4 mb-6 flex justify-between items-center flex-wrap gap-3">
       <div>
         <h1 class="text-2xl font-bold text-slate-900">Space Science Institute - TA Assistant</h1>
-        <p class="text-sm text-slate-500">Automate TA forms, multi-leg itineraries, flight/hotel/car documentation, conference registrations, and collated PDF packages.</p>
+        <p class="text-sm text-slate-500">Automate TA forms, multi-leg itineraries, flight/hotel/car documentation, conference registrations, traveler certification, and collated PDF packages.</p>
       </div>
       <!-- Save & Load Draft JSON -->
       <div class="flex gap-2">
@@ -458,7 +461,19 @@
         <div id="generalPdfList" class="mt-2 text-xs text-slate-600 space-y-1"></div>
       </section>
 
-      <!-- 10. TA Template Selector -->
+      <!-- 10. Traveler Certification & Autosign -->
+      <section class="border p-4 rounded-lg bg-slate-50 border-slate-200 space-y-3">
+        <h2 class="text-md font-semibold text-slate-800">10. Traveler Certification &amp; Signature</h2>
+        <div class="flex items-start gap-3 bg-white p-3 rounded border border-slate-200 shadow-sm">
+          <input type="checkbox" id="certifyAutosign" class="mt-1 rounded text-indigo-600" checked="" onchange="updateFieldHighlights()">
+          <label for="certifyAutosign" class="text-xs text-slate-700 leading-relaxed font-medium cursor-pointer">
+            <strong>I CERTIFY THAT THE ABOVE ESTIMATED EXPENSES WILL BE INCURRED BY ME IN THE FULFILLMENT OF MY DUTIES TO THE SPACE SCIENCE INSTITUTE, WHICH CANNOT ADEQUATELY BE ACHIEVED OTHERWISE, THAT THE ESTIMATED TRAVEL HAS RECEIVED THE NECESSARY FUNDING AGENCY APPROVAL(S), THAT AN ADEQUATE BUDGET EXISTS TO COVER THE ESTIMATED EXPENSES, AND THAT ALL EXPENSES WILL BE INCURRED IN ACCORDANCE WITH SSI TRAVEL POLICY. THE TRAVELER HAS READ AND UNDERSTANDS THE TRAVEL POLICY AND CERTIFIES THAT ALL OF THE PROJECTED COSTS ON THE TA ARE IN COMPLIANCE WITH THE TRAVEL POLICY AND ANY THAT ARE NOT WILL NOT BE REIMBURSED.</strong>
+            <span class="block mt-1 text-slate-500 text-[11px] font-normal">(Checking this box automatically populates the Traveler Signature and Date fields on Page 2 of the Travel Authorization form.)</span>
+          </label>
+        </div>
+      </section>
+
+      <!-- 11. TA Template Selector -->
       <section class="p-4 bg-amber-50 border border-amber-200 rounded-lg">
         <label class="block text-xs font-bold text-amber-800 mb-1">TA PDF Template File</label>
         <p class="text-xs text-amber-700 mb-2">Ensure <code>TA_Template.pdf</code> is stored in the repository root or select it below.</p>
@@ -1326,6 +1341,7 @@
         taNumber: document.getElementById('taNumber').value,
         businessPurpose: document.getElementById('businessPurpose').value,
         itineraryNotes: document.getElementById('itineraryNotes').value,
+        certifyAutosign: document.getElementById('certifyAutosign').checked,
         travelAdjustments: {
           family: document.getElementById('adjFamily').checked,
           familyNotes: document.getElementById('adjFamilyNotes').value,
@@ -1460,7 +1476,10 @@
 
           Object.keys(data).forEach(key => {
             const el = document.getElementById(key);
-            if (el && typeof data[key] !== 'object') el.value = data[key];
+            if (el && typeof data[key] !== 'object') {
+              if (el.type === 'checkbox') el.checked = !!data[key];
+              else el.value = data[key];
+            }
           });
 
           if (data.travelAdjustments) {
@@ -1542,7 +1561,7 @@
       setField('Total#0', totals.mealTotal.toFixed(2));
 
       // Lodging Per Diem & Rate column fill
-      const lodgingRateVal = bizLegs[0]?.lodgingRate ? `$${bizLegs[0].lodgingRate}` : '';
+      const lodgingRateVal = bizLegs[0]?.lodgingRate ? `$${bizLegs[0].lodgingRate}/night (Biz Legs)` : '';
       setField('undefined', lodgingRateVal);
       setField('LODGING Per Diem', lodgingRateVal);
       setField('DATES#1', `${totals.overallStart} - ${totals.overallEnd}`);
@@ -1604,7 +1623,13 @@
         }
       });
 
-      setField('TRAVELER', travelerName);
+      // Traveler Certification & Autosign Page 2 Signature Fill
+      const isCertified = document.getElementById('certifyAutosign')?.checked;
+      if (isCertified) {
+        setField('TRAVELER', travelerName);
+        setField('DATE_2', todayStr);
+      }
+
       return await pdfDoc.save();
     }
 
