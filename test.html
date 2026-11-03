@@ -1,17 +1,18 @@
 <!DOCTYPE html>
 <html lang="en">
 <head>
-  <meta charset="UTF-8" />
-  <meta name="viewport" content="width=device-width, initial-scale=1.0" />
-  <title>SSI Travel Authorization & Itinerary Assistant</title>
+  <meta http-equiv="content-type" content="text/html; charset=UTF-8">
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>SSI Travel Authorization &amp; Itinerary Assistant</title>
 
   <!-- Tailwind CSS -->
-  <script src="https://cdn.tailwindcss.com"></script>
+  <script src="SSI%20Travel%20Authorization%20&amp;%20Itinerary%20Assistant_files/3.4_ZSbQ.17"></script>
   <!-- pdf-lib for filling AcroForms and merging PDFs -->
-  <script src="https://unpkg.com/pdf-lib@1.17.1/dist/pdf-lib.min.js"></script>
+  <script src="SSI%20Travel%20Authorization%20&amp;%20Itinerary%20Assistant_files/pdf-lib.min_ZSbQ.js"></script>
   <!-- pdfmake for generating auxiliary PDFs -->
-  <script src="https://cdnjs.cloudflare.com/ajax/libs/pdfmake/0.2.7/pdfmake.min.js"></script>
-  <script src="https://cdnjs.cloudflare.com/ajax/libs/pdfmake/0.2.7/vfs_fonts.js"></script>
+  <script src="SSI%20Travel%20Authorization%20&amp;%20Itinerary%20Assistant_files/pdfmake.min_ZSbQ.js"></script>
+  <script src="SSI%20Travel%20Authorization%20&amp;%20Itinerary%20Assistant_files/vfs_fonts_ZSbQ.js"></script>
   
   <style>
     /* Visual Checklist: Soft pink when empty, soft green when filled */
@@ -28,6 +29,195 @@
       border-color: #f87171 !important;
     }
   </style>
+  <style>
+    *, ::before, ::after{--tw-border-spacing-x:0;--tw-border-spacing-y:0;--tw-translate-x:0;--tw-translate-y:0;--tw-rotate:0;--tw-skew-x:0;--tw-skew-y:0;--tw-scale-x:1;--tw-scale-y:1;--tw-pan-x: ;--tw-pan-y: ;--tw-pinch-zoom: ;--tw-scroll-snap-strictness:proximity;--tw-gradient-from-position: ;--tw-gradient-via-position: ;--tw-gradient-to-position: ;--tw-ordinal: ;--tw-slashed-zero: ;--tw-numeric-figure: ;--tw-numeric-spacing: ;--tw-numeric-fraction: ;--tw-ring-inset: ;--tw-ring-offset-width:0px;--tw-ring-offset-color:#fff;--tw-ring-color:rgb(59 130 246 / 0.5);--tw-ring-offset-shadow:0 0 #0000;--tw-ring-shadow:0 0 #0000;--tw-shadow:0 0 #0000;--tw-shadow-colored:0 0 #0000;--tw-blur: ;--tw-brightness: ;--tw-contrast: ;--tw-grayscale: ;--tw-hue-rotate: ;--tw-invert: ;--tw-saturate: ;--tw-sepia: ;--tw-drop-shadow: ;--tw-backdrop-blur: ;--tw-backdrop-brightness: ;--tw-backdrop-contrast: ;--tw-backdrop-grayscale: ;--tw-backdrop-hue-rotate: ;--tw-backdrop-invert: ;--tw-backdrop-opacity: ;--tw-backdrop-saturate: ;--tw-backdrop-sepia: ;--tw-contain-size: ;--tw-contain-layout: ;--tw-contain-paint: ;--tw-contain-style: }
+    ::backdrop{--tw-border-spacing-x:0;--tw-border-spacing-y:0;--tw-translate-x:0;--tw-translate-y:0;--tw-rotate:0;--tw-skew-x:0;--tw-skew-y:0;--tw-scale-x:1;--tw-scale-y:1;--tw-pan-x: ;--tw-pan-y: ;--tw-pinch-zoom: ;--tw-scroll-snap-strictness:proximity;--tw-gradient-from-position: ;--tw-gradient-via-position: ;--tw-gradient-to-position: ;--tw-ordinal: ;--tw-slashed-zero: ;--tw-numeric-figure: ;--tw-numeric-spacing: ;--tw-numeric-fraction: ;--tw-ring-inset: ;--tw-ring-offset-width:0px;--tw-ring-offset-color:#fff;--tw-ring-color:rgb(59 130 246 / 0.5);--tw-ring-offset-shadow:0 0 #0000;--tw-ring-shadow:0 0 #0000;--tw-shadow:0 0 #0000;--tw-shadow-colored:0 0 #0000;--tw-blur: ;--tw-brightness: ;--tw-contrast: ;--tw-grayscale: ;--tw-hue-rotate: ;--tw-invert: ;--tw-saturate: ;--tw-sepia: ;--tw-drop-shadow: ;--tw-backdrop-blur: ;--tw-backdrop-brightness: ;--tw-backdrop-contrast: ;--tw-backdrop-grayscale: ;--tw-backdrop-hue-rotate: ;--tw-backdrop-invert: ;--tw-backdrop-opacity: ;--tw-backdrop-saturate: ;--tw-backdrop-sepia: ;--tw-contain-size: ;--tw-contain-layout: ;--tw-contain-paint: ;--tw-contain-style: }
+    *,::after,::before{box-sizing:border-box;border-width:0;border-style:solid;border-color:#e5e7eb}
+    ::after,::before{--tw-content:''}
+    :host,html{line-height:1.5;-webkit-text-size-adjust:100%;-moz-tab-size:4;tab-size:4;font-family:ui-sans-serif, system-ui, sans-serif, "Apple Color Emoji", "Segoe UI Emoji", "Segoe UI Symbol", "Noto Color Emoji";font-feature-settings:normal;font-variation-settings:normal;-webkit-tap-highlight-color:transparent}
+    body{margin:0;line-height:inherit}
+    hr{height:0;color:inherit;border-top-width:1px}
+    abbr:where([title]){-webkit-text-decoration:underline dotted;text-decoration:underline dotted}
+    h1,h2,h3,h4,h5,h6{font-size:inherit;font-weight:inherit}
+    a{color:inherit;text-decoration:inherit}
+    b,strong{font-weight:bolder}
+    code,kbd,pre,samp{font-family:ui-monospace, SFMono-Regular, Menlo, Monaco, Consolas, "Liberation Mono", "Courier New", monospace;font-feature-settings:normal;font-variation-settings:normal;font-size:1em}
+    small{font-size:80%}
+    sub,sup{font-size:75%;line-height:0;position:relative;vertical-align:baseline}
+    sub{bottom:-.25em}
+    sup{top:-.5em}
+    table{text-indent:0;border-color:inherit;border-collapse:collapse}
+    button,input,optgroup,select,textarea{font-family:inherit;font-feature-settings:inherit;font-variation-settings:inherit;font-size:100%;font-weight:inherit;line-height:inherit;letter-spacing:inherit;color:inherit;margin:0;padding:0}
+    button,select{text-transform:none}
+    button,input:where([type=button]),input:where([type=reset]),input:where([type=submit]){-webkit-appearance:button;background-color:transparent;background-image:none}
+    :-moz-focusring{outline:auto}
+    :-moz-ui-invalid{box-shadow:none}
+    progress{vertical-align:baseline}
+    ::-webkit-inner-spin-button,::-webkit-outer-spin-button{height:auto}
+    [type=search]{-webkit-appearance:textfield;outline-offset:-2px}
+    ::-webkit-search-decoration{-webkit-appearance:none}
+    ::-webkit-file-upload-button{-webkit-appearance:button;font:inherit}
+    summary{display:list-item}
+    blockquote,dd,dl,figure,h1,h2,h3,h4,h5,h6,hr,p,pre{margin:0}
+    fieldset{margin:0;padding:0}
+    legend{padding:0}
+    menu,ol,ul{list-style:none;margin:0;padding:0}
+    dialog{padding:0}
+    textarea{resize:vertical}
+    input::placeholder,textarea::placeholder{opacity:1;color:#9ca3af}
+    [role=button],button{cursor:pointer}
+    :disabled{cursor:default}
+    audio,canvas,embed,iframe,img,object,svg,video{display:block;vertical-align:middle}
+    img,video{max-width:100%;height:auto}
+    [hidden]:where(:not([hidden=until-found])){display:none}
+    .relative{position:relative}
+    .mx-auto{margin-left:auto;margin-right:auto}
+    .mb-1{margin-bottom:0.25rem}
+    .mb-2{margin-bottom:0.5rem}
+    .mb-3{margin-bottom:0.75rem}
+    .mb-6{margin-bottom:1.5rem}
+    .mt-2{margin-top:0.5rem}
+    .mt-4{margin-top:1rem}
+    .mb-0\.5{margin-bottom:0.125rem}
+    .block{display:block}
+    .flex{display:flex}
+    .grid{display:grid}
+    .hidden{display:none}
+    .w-full{width:100%}
+    .max-w-5xl{max-width:64rem}
+    .cursor-pointer{cursor:pointer}
+    .grid-cols-1{grid-template-columns:repeat(1, minmax(0, 1fr))}
+    .flex-wrap{flex-wrap:wrap}
+    .items-center{align-items:center}
+    .justify-between{justify-content:space-between}
+    .gap-2{gap:0.5rem}
+    .gap-3{gap:0.75rem}
+    .gap-4{gap:1rem}
+    .space-y-1 > :not([hidden]) ~ :not([hidden]){--tw-space-y-reverse:0;margin-top:calc(0.25rem * calc(1 - var(--tw-space-y-reverse)));margin-bottom:calc(0.25rem * var(--tw-space-y-reverse))}
+    .space-y-2 > :not([hidden]) ~ :not([hidden]){--tw-space-y-reverse:0;margin-top:calc(0.5rem * calc(1 - var(--tw-space-y-reverse)));margin-bottom:calc(0.5rem * var(--tw-space-y-reverse))}
+    .space-y-3 > :not([hidden]) ~ :not([hidden]){--tw-space-y-reverse:0;margin-top:calc(0.75rem * calc(1 - var(--tw-space-y-reverse)));margin-bottom:calc(0.75rem * var(--tw-space-y-reverse))}
+    .space-y-4 > :not([hidden]) ~ :not([hidden]){--tw-space-y-reverse:0;margin-top:calc(1rem * calc(1 - var(--tw-space-y-reverse)));margin-bottom:calc(1rem * var(--tw-space-y-reverse))}
+    .space-y-6 > :not([hidden]) ~ :not([hidden]){--tw-space-y-reverse:0;margin-top:calc(1.5rem * calc(1 - var(--tw-space-y-reverse)));margin-bottom:calc(1.5rem * var(--tw-space-y-reverse))}
+    .space-y-1\.5 > :not([hidden]) ~ :not([hidden]){--tw-space-y-reverse:0;margin-top:calc(0.375rem * calc(1 - var(--tw-space-y-reverse)));margin-bottom:calc(0.375rem * var(--tw-space-y-reverse))}
+    .rounded{border-radius:0.25rem}
+    .rounded-lg{border-radius:0.5rem}
+    .rounded-md{border-radius:0.375rem}
+    .rounded-xl{border-radius:0.75rem}
+    .border{border-width:1px}
+    .border-b{border-bottom-width:1px}
+    .border-t{border-top-width:1px}
+    .border-amber-200{--tw-border-opacity:1;border-color:rgb(253 230 138 / var(--tw-border-opacity, 1))}
+    .border-red-300{--tw-border-opacity:1;border-color:rgb(252 165 165 / var(--tw-border-opacity, 1))}
+    .border-slate-200{--tw-border-opacity:1;border-color:rgb(226 232 240 / var(--tw-border-opacity, 1))}
+    .border-blue-100{--tw-border-opacity:1;border-color:rgb(219 234 254 / var(--tw-border-opacity, 1))}
+    .border-indigo-200{--tw-border-opacity:1;border-color:rgb(199 210 254 / var(--tw-border-opacity, 1))}
+    .border-purple-200{--tw-border-opacity:1;border-color:rgb(233 213 255 / var(--tw-border-opacity, 1))}
+    .border-sky-200{--tw-border-opacity:1;border-color:rgb(186 230 253 / var(--tw-border-opacity, 1))}
+    .border-sky-300{--tw-border-opacity:1;border-color:rgb(125 211 252 / var(--tw-border-opacity, 1))}
+    .border-teal-200{--tw-border-opacity:1;border-color:rgb(153 246 228 / var(--tw-border-opacity, 1))}
+    .bg-amber-50{--tw-bg-opacity:1;background-color:rgb(255 251 235 / var(--tw-bg-opacity, 1))}
+    .bg-amber-600{--tw-bg-opacity:1;background-color:rgb(217 119 6 / var(--tw-bg-opacity, 1))}
+    .bg-blue-600{--tw-bg-opacity:1;background-color:rgb(37 99 235 / var(--tw-bg-opacity, 1))}
+    .bg-emerald-600{--tw-bg-opacity:1;background-color:rgb(5 150 105 / var(--tw-bg-opacity, 1))}
+    .bg-emerald-700{--tw-bg-opacity:1;background-color:rgb(4 120 87 / var(--tw-bg-opacity, 1))}
+    .bg-indigo-600{--tw-bg-opacity:1;background-color:rgb(79 70 229 / var(--tw-bg-opacity, 1))}
+    .bg-purple-600{--tw-bg-opacity:1;background-color:rgb(147 51 234 / var(--tw-bg-opacity, 1))}
+    .bg-red-50{--tw-bg-opacity:1;background-color:rgb(254 242 242 / var(--tw-bg-opacity, 1))}
+    .bg-sky-600{--tw-bg-opacity:1;background-color:rgb(2 132 199 / var(--tw-bg-opacity, 1))}
+    .bg-teal-600{--tw-bg-opacity:1;background-color:rgb(13 148 136 / var(--tw-bg-opacity, 1))}
+    .bg-slate-100{--tw-bg-opacity:1;background-color:rgb(241 245 249 / var(--tw-bg-opacity, 1))}
+    .bg-slate-200{--tw-bg-opacity:1;background-color:rgb(226 232 240 / var(--tw-bg-opacity, 1))}
+    .bg-slate-50{--tw-bg-opacity:1;background-color:rgb(248 250 252 / var(--tw-bg-opacity, 1))}
+    .bg-slate-800{--tw-bg-opacity:1;background-color:rgb(30 41 59 / var(--tw-bg-opacity, 1))}
+    .bg-white{--tw-bg-opacity:1;background-color:rgb(255 255 255 / var(--tw-bg-opacity, 1))}
+    .bg-amber-50\/50{background-color:rgb(255 251 235 / 0.5)}
+    .bg-blue-50\/60{background-color:rgb(239 246 255 / 0.6)}
+    .bg-indigo-50{--tw-bg-opacity:1;background-color:rgb(238 242 255 / var(--tw-bg-opacity, 1))}
+    .bg-purple-100{--tw-bg-opacity:1;background-color:rgb(243 232 255 / var(--tw-bg-opacity, 1))}
+    .bg-purple-50\/50{background-color:rgb(250 245 255 / 0.5)}
+    .bg-sky-100{--tw-bg-opacity:1;background-color:rgb(224 242 254 / var(--tw-bg-opacity, 1))}
+    .bg-sky-50\/50{background-color:rgb(240 249 255 / 0.5)}
+    .bg-teal-50\/50{background-color:rgb(240 253 250 / 0.5)}
+    .p-1{padding:0.25rem}
+    .p-2{padding:0.5rem}
+    .p-3{padding:0.75rem}
+    .p-4{padding:1rem}
+    .p-6{padding:1.5rem}
+    .p-8{padding:2rem}
+    .p-0\.5{padding:0.125rem}
+    .p-1\.5{padding:0.375rem}
+    .px-3{padding-left:0.75rem;padding-right:0.75rem}
+    .px-4{padding-left:1rem;padding-right:1rem}
+    .px-5{padding-left:1.25rem;padding-right:1.25rem}
+    .py-1{padding-top:0.25rem;padding-bottom:0.25rem}
+    .py-1\.5{padding-top:0.375rem;padding-bottom:0.375rem}
+    .py-2{padding-top:0.5rem;padding-bottom:0.5rem}
+    .py-2\.5{padding-top:0.625rem;padding-bottom:0.625rem}
+    .px-2{padding-left:0.5rem;padding-right:0.5rem}
+    .py-0\.5{padding-top:0.125rem;padding-bottom:0.125rem}
+    .pb-1{padding-bottom:0.25rem}
+    .pb-4{padding-bottom:1rem}
+    .pt-4{padding-top:1rem}
+    .pb-2{padding-bottom:0.5rem}
+    .pt-1{padding-top:0.25rem}
+    .text-right{text-align:right}
+    .font-sans{font-family:ui-sans-serif, system-ui, sans-serif, "Apple Color Emoji", "Segoe UI Emoji", "Segoe UI Symbol", "Noto Color Emoji"}
+    .text-2xl{font-size:1.5rem;line-height:2rem}
+    .text-lg{font-size:1.125rem;line-height:1.75rem}
+    .text-sm{font-size:0.875rem;line-height:1.25rem}
+    .text-xs{font-size:0.75rem;line-height:1rem}
+    .text-\[10px\]{font-size:10px}
+    .text-\[11px\]{font-size:11px}
+    .font-bold{font-weight:700}
+    .font-medium{font-weight:500}
+    .font-semibold{font-weight:600}
+    .text-amber-700{--tw-text-opacity:1;color:rgb(180 83 9 / var(--tw-text-opacity, 1))}
+    .text-amber-800{--tw-text-opacity:1;color:rgb(146 64 14 / var(--tw-text-opacity, 1))}
+    .text-blue-700{--tw-text-opacity:1;color:rgb(29 78 216 / var(--tw-text-opacity, 1))}
+    .text-indigo-600{--tw-text-opacity:1;color:rgb(79 70 229 / var(--tw-text-opacity, 1))}
+    .text-red-800{--tw-text-opacity:1;color:rgb(153 27 27 / var(--tw-text-opacity, 1))}
+    .text-slate-500{--tw-text-opacity:1;color:rgb(100 116 139 / var(--tw-text-opacity, 1))}
+    .text-slate-600{--tw-text-opacity:1;color:rgb(71 85 105 / var(--tw-text-opacity, 1))}
+    .text-slate-700{--tw-text-opacity:1;color:rgb(51 65 85 / var(--tw-text-opacity, 1))}
+    .text-slate-800{--tw-text-opacity:1;color:rgb(30 41 59 / var(--tw-text-opacity, 1))}
+    .text-slate-900{--tw-text-opacity:1;color:rgb(15 23 42 / var(--tw-text-opacity, 1))}
+    .text-white{--tw-text-opacity:1;color:rgb(255 255 255 / var(--tw-text-opacity, 1))}
+    .text-amber-900{--tw-text-opacity:1;color:rgb(120 53 15 / var(--tw-text-opacity, 1))}
+    .text-blue-900{--tw-text-opacity:1;color:rgb(30 58 138 / var(--tw-text-opacity, 1))}
+    .text-purple-900{--tw-text-opacity:1;color:rgb(88 28 135 / var(--tw-text-opacity, 1))}
+    .text-sky-800{--tw-text-opacity:1;color:rgb(7 89 133 / var(--tw-text-opacity, 1))}
+    .text-sky-900{--tw-text-opacity:1;color:rgb(12 74 110 / var(--tw-text-opacity, 1))}
+    .text-teal-900{--tw-text-opacity:1;color:rgb(19 78 74 / var(--tw-text-opacity, 1))}
+    .shadow{--tw-shadow:0 1px 3px 0 rgb(0 0 0 / 0.1), 0 1px 2px -1px rgb(0 0 0 / 0.1);box-shadow:var(--tw-ring-offset-shadow, 0 0 #0000), var(--tw-ring-shadow, 0 0 #0000), var(--tw-shadow)}
+    .shadow-md{--tw-shadow:0 4px 6px -1px rgb(0 0 0 / 0.1), 0 2px 4px -2px rgb(0 0 0 / 0.1);box-shadow:var(--tw-ring-offset-shadow, 0 0 #0000), var(--tw-ring-shadow, 0 0 #0000), var(--tw-shadow)}
+    .shadow-sm{--tw-shadow:0 1px 2px 0 rgb(0 0 0 / 0.05);box-shadow:var(--tw-ring-offset-shadow, 0 0 #0000), var(--tw-ring-shadow, 0 0 #0000), var(--tw-shadow)}
+    .hover\:bg-amber-700:hover{--tw-bg-opacity:1;background-color:rgb(180 83 9 / var(--tw-bg-opacity, 1))}
+    .hover\:bg-blue-700:hover{--tw-bg-opacity:1;background-color:rgb(29 78 216 / var(--tw-bg-opacity, 1))}
+    .hover\:bg-emerald-700:hover{--tw-bg-opacity:1;background-color:rgb(4 120 87 / var(--tw-bg-opacity, 1))}
+    .hover\:bg-emerald-800:hover{--tw-bg-opacity:1;background-color:rgb(6 95 70 / var(--tw-bg-opacity, 1))}
+    .hover\:bg-indigo-700:hover{--tw-bg-opacity:1;background-color:rgb(67 56 202 / var(--tw-bg-opacity, 1))}
+    .hover\:bg-purple-700:hover{--tw-bg-opacity:1;background-color:rgb(126 34 206 / var(--tw-bg-opacity, 1))}
+    .hover\:bg-sky-700:hover{--tw-bg-opacity:1;background-color:rgb(3 105 161 / var(--tw-bg-opacity, 1))}
+    .hover\:bg-teal-700:hover{--tw-bg-opacity:1;background-color:rgb(15 118 110 / var(--tw-bg-opacity, 1))}
+    .hover\:bg-slate-300:hover{--tw-bg-opacity:1;background-color:rgb(203 213 225 / var(--tw-bg-opacity, 1))}
+    .hover\:bg-slate-900:hover{--tw-bg-opacity:1;background-color:rgb(15 23 42 / var(--tw-bg-opacity, 1))}
+    .hover\:bg-indigo-100:hover{--tw-bg-opacity:1;background-color:rgb(224 231 255 / var(--tw-bg-opacity, 1))}
+    .hover\:bg-sky-200:hover{--tw-bg-opacity:1;background-color:rgb(186 230 253 / var(--tw-bg-opacity, 1))}
+    @media (min-width: 768px){
+      .md\:col-span-5{grid-column:span 5 / span 5}
+      .md\:col-span-7{grid-column:span 7 / span 7}
+      .md\:col-span-1{grid-column:span 1 / span 1}
+      .md\:col-span-3{grid-column:span 3 / span 3}
+      .md\:col-span-4{grid-column:span 4 / span 4}
+      .md\:grid-cols-12{grid-template-columns:repeat(12, minmax(0, 1fr))}
+      .md\:grid-cols-4{grid-template-columns:repeat(4, minmax(0, 1fr))}
+      .md\:grid-cols-2{grid-template-columns:repeat(2, minmax(0, 1fr))}
+      .md\:grid-cols-3{grid-template-columns:repeat(3, minmax(0, 1fr))}
+      .md\:grid-cols-5{grid-template-columns:repeat(5, minmax(0, 1fr))}
+      .md\:grid-cols-6{grid-template-columns:repeat(6, minmax(0, 1fr))}
+      .md\:grid-cols-7{grid-template-columns:repeat(7, minmax(0, 1fr))}
+    }
+  </style>
 </head>
 <body class="bg-slate-100 text-slate-800 font-sans p-6">
 
@@ -35,7 +225,7 @@
     <header class="border-b pb-4 mb-6 flex justify-between items-center flex-wrap gap-3">
       <div>
         <h1 class="text-2xl font-bold text-slate-900">Space Science Institute - TA Assistant</h1>
-        <p class="text-sm text-slate-500">Automate TA forms, multi-leg itineraries, flight/hotel/car documentation, and collated PDF packages.</p>
+        <p class="text-sm text-slate-500">Automate TA forms, multi-leg itineraries, flight/hotel/car documentation, conference registrations, and collated PDF packages.</p>
       </div>
       <!-- Save & Load Draft JSON -->
       <div class="flex gap-2">
@@ -44,7 +234,7 @@
         </button>
         <label class="px-3 py-1.5 bg-slate-200 hover:bg-slate-300 text-slate-800 rounded text-xs font-semibold cursor-pointer shadow">
           📂 Import Draft (JSON)
-          <input type="file" id="jsonFileInput" accept=".json" class="hidden" onchange="importJSON(event)" />
+          <input type="file" id="jsonFileInput" accept=".json" class="hidden" onchange="importJSON(event)">
         </label>
       </div>
     </header>
@@ -56,23 +246,19 @@
       
       <!-- 1. General Traveler Info -->
       <section>
-        <h2 class="text-lg font-semibold text-slate-700 mb-3 border-b pb-1">1. Traveler Info & Registration Fees</h2>
-        <div class="grid grid-cols-1 md:grid-cols-4 gap-4">
+        <h2 class="text-lg font-semibold text-slate-700 mb-3 border-b pb-1">1. Traveler Info</h2>
+        <div class="grid grid-cols-1 md:grid-cols-3 gap-4">
           <div>
             <label class="block text-xs font-semibold text-slate-600 mb-1">Traveler Name (First Last)</label>
-            <input type="text" id="travelerName" placeholder="Jane Doe" class="chk-input w-full border rounded p-2 text-sm" required />
+            <input type="text" id="travelerName" placeholder="Jane Doe" class="chk-input w-full border rounded p-2 text-sm field-filled" required="" value="Kristina Collins">
           </div>
           <div>
             <label class="block text-xs font-semibold text-slate-600 mb-1">TA Serial Number</label>
-            <input type="text" id="taNumber" placeholder="5781" class="chk-input w-full border rounded p-2 text-sm" />
+            <input type="text" id="taNumber" placeholder="5781" class="chk-input w-full border rounded p-2 text-sm field-empty">
           </div>
           <div>
             <label class="block text-xs font-semibold text-slate-600 mb-1">Overall Business Purpose</label>
-            <input type="text" id="businessPurpose" placeholder="AGU Conference Presentation" class="chk-input w-full border rounded p-2 text-sm" required />
-          </div>
-          <div>
-            <label class="block text-xs font-semibold text-slate-600 mb-1">Meeting Registration Fee ($)</label>
-            <input type="number" id="conferenceRegFee" placeholder="450.00" step="0.01" class="chk-input w-full border rounded p-2 text-sm" oninput="calculateTotals()" />
+            <input type="text" id="businessPurpose" placeholder="AGU Conference Presentation" class="chk-input w-full border rounded p-2 text-sm field-empty" required="">
           </div>
         </div>
       </section>
@@ -81,7 +267,7 @@
       <section class="bg-slate-50 p-4 rounded-lg border border-slate-200">
         <div class="flex justify-between items-center mb-3">
           <div>
-            <h2 class="text-md font-semibold text-slate-800">2. Trip Legs & Destination Itinerary</h2>
+            <h2 class="text-md font-semibold text-slate-800">2. Trip Legs &amp; Destination Itinerary</h2>
             <p class="text-xs text-slate-500">Add consecutive trip legs with specific leg purposes. Per diem is calculated for Business legs.</p>
           </div>
           <button type="button" onclick="addLegRow()" class="px-3 py-1 bg-emerald-600 hover:bg-emerald-700 text-white rounded text-xs font-semibold shadow">
@@ -95,19 +281,36 @@
         <div class="mt-4 p-3 bg-white border rounded-lg flex flex-wrap justify-between text-xs font-medium text-slate-700 gap-2">
           <div>Total Days: <span id="calcDays" class="font-bold text-slate-900">0</span></div>
           <div>Business Days: <span id="calcBizDays" class="font-bold text-slate-900">0</span></div>
-          <div>Meals Total: $<span id="calcMeals" class="font-bold text-slate-900">0.00</span></div>
-          <div>Lodging Total: $<span id="calcLodging" class="font-bold text-slate-900">0.00</span></div>
-          <div>Airfare Total: $<span id="calcAirfareTotal" class="font-bold text-slate-900">0.00</span></div>
-          <div>Mileage Total: $<span id="calcMileageTotal" class="font-bold text-slate-900">0.00</span></div>
+          <div>Meals: $<span id="calcMeals" class="font-bold text-slate-900">0.00</span></div>
+          <div>Lodging: $<span id="calcLodging" class="font-bold text-slate-900">0.00</span></div>
+          <div>Airfare: $<span id="calcAirfareTotal" class="font-bold text-slate-900">0.00</span></div>
+          <div>Conf Reg: $<span id="calcConfRegTotal" class="font-bold text-slate-900">0.00</span></div>
+          <div>Other/Add'l: $<span id="calcConfAddTotal" class="font-bold text-slate-900">0.00</span></div>
+          <div>Mileage: $<span id="calcMileageTotal" class="font-bold text-slate-900">0.00</span></div>
           <div>Grand Total: $<span id="calcGrandTotal" class="font-bold text-blue-700">0.00</span></div>
         </div>
       </section>
 
-      <!-- 3. Multi-Flight Comparisons -->
+      <!-- 3. Conference Registration & Fees (NEW SECTION) -->
       <section class="border p-4 rounded-lg bg-white border-slate-200">
         <div class="flex justify-between items-center mb-3">
           <div>
-            <h2 class="text-md font-semibold text-slate-800">3. Flight Quotes & Comparisons</h2>
+            <h2 class="text-md font-semibold text-slate-800">3. Conference Registration &amp; Fees</h2>
+            <p class="text-xs text-slate-500">Document conference dates, registration fees, and additional fees (e.g. abstract submission, workshops). Additional fees populate "Other-Specify" on the TA form.</p>
+          </div>
+          <button type="button" onclick="addConferenceRow()" class="px-3 py-1 bg-teal-600 hover:bg-teal-700 text-white rounded text-xs font-semibold shadow">
+            ➕ Add Conference
+          </button>
+        </div>
+
+        <div id="conferencesContainer" class="space-y-4"></div>
+      </section>
+
+      <!-- 4. Multi-Flight Comparisons -->
+      <section class="border p-4 rounded-lg bg-white border-slate-200">
+        <div class="flex justify-between items-center mb-3">
+          <div>
+            <h2 class="text-md font-semibold text-slate-800">4. Flight Quotes &amp; Comparisons</h2>
             <p class="text-xs text-slate-500">Document round-trip/one-way flights, search Google Flights, and attach PDF quotes.</p>
           </div>
           <button type="button" onclick="addFlightRow()" class="px-3 py-1 bg-sky-600 hover:bg-sky-700 text-white rounded text-xs font-semibold shadow">
@@ -118,11 +321,11 @@
         <div id="flightsContainer" class="space-y-4"></div>
       </section>
 
-      <!-- 4. Hotel Stays Section -->
+      <!-- 5. Hotel Stays Section -->
       <section class="border p-4 rounded-lg bg-white border-slate-200">
         <div class="flex justify-between items-center mb-3">
           <div>
-            <h2 class="text-md font-semibold text-slate-800">4. Hotel Stays & Accommodations</h2>
+            <h2 class="text-md font-semibold text-slate-800">5. Hotel Stays &amp; Accommodations</h2>
             <p class="text-xs text-slate-500">Track hotel locations, websites, night rates, and attach PDF quotes/confirmations.</p>
           </div>
           <button type="button" onclick="addHotelRow()" class="px-3 py-1 bg-amber-600 hover:bg-amber-700 text-white rounded text-xs font-semibold shadow">
@@ -133,11 +336,11 @@
         <div id="hotelsContainer" class="space-y-3"></div>
       </section>
 
-      <!-- 5. Ground Mileage & Transit -->
+      <!-- 6. Ground Mileage & Transit -->
       <section class="border p-4 rounded-lg bg-white border-slate-200">
         <div class="flex justify-between items-center mb-3">
           <div>
-            <h2 class="text-md font-semibold text-slate-800">5. Ground Transportation & Mileage Trips</h2>
+            <h2 class="text-md font-semibold text-slate-800">6. Ground Transportation &amp; Mileage Trips</h2>
             <p class="text-xs text-slate-500">Document personal car mileage, taxi/rideshare, or train trips with PDF route attachments.</p>
           </div>
           <button type="button" onclick="addMileageRow()" class="px-3 py-1 bg-purple-600 hover:bg-purple-700 text-white rounded text-xs font-semibold shadow">
@@ -148,69 +351,69 @@
         <div id="mileageContainer" class="space-y-3"></div>
       </section>
 
-      <!-- 6. Travel Adjustments Checklist -->
+      <!-- 7. Travel Adjustments Checklist -->
       <section class="border p-4 rounded-lg bg-slate-50 border-slate-200">
-        <h2 class="text-md font-semibold text-slate-800 mb-1">6. Special Travel Adjustments & Checklist</h2>
+        <h2 class="text-md font-semibold text-slate-800 mb-1">7. Special Travel Adjustments &amp; Checklist</h2>
         <p class="text-xs text-slate-500 mb-3">Check applicable non-standard situations and provide required policy notes.</p>
 
         <div class="space-y-2 text-xs">
           <div class="grid grid-cols-1 md:grid-cols-12 gap-2 items-center bg-white p-2 rounded border">
             <div class="md:col-span-5 flex items-center gap-2">
-              <input type="checkbox" id="adjFamily" class="rounded text-indigo-600" />
+              <input type="checkbox" id="adjFamily" class="rounded text-indigo-600">
               <label for="adjFamily" class="font-semibold text-slate-700">Traveling with partner/family</label>
             </div>
             <div class="md:col-span-7">
-              <input type="text" id="adjFamilyNotes" placeholder="Notes (e.g. Spouse accompanying at personal cost)" class="chk-input w-full border rounded p-1 text-xs" />
+              <input type="text" id="adjFamilyNotes" placeholder="Notes (e.g. Spouse accompanying at personal cost)" class="chk-input w-full border rounded p-1 text-xs field-empty">
             </div>
           </div>
 
           <div class="grid grid-cols-1 md:grid-cols-12 gap-2 items-center bg-white p-2 rounded border">
             <div class="md:col-span-5 flex items-center gap-2">
-              <input type="checkbox" id="adjSharedRoom" class="rounded text-indigo-600" />
+              <input type="checkbox" id="adjSharedRoom" class="rounded text-indigo-600">
               <label for="adjSharedRoom" class="font-semibold text-slate-700">Shared rooming situation</label>
             </div>
             <div class="md:col-span-7">
-              <input type="text" id="adjSharedRoomNotes" placeholder="Notes (e.g. Room shared with Dr. Smith)" class="chk-input w-full border rounded p-1 text-xs" />
+              <input type="text" id="adjSharedRoomNotes" placeholder="Notes (e.g. Room shared with Dr. Smith)" class="chk-input w-full border rounded p-1 text-xs field-empty">
             </div>
           </div>
 
           <div class="grid grid-cols-1 md:grid-cols-12 gap-2 items-center bg-white p-2 rounded border">
             <div class="md:col-span-5 flex items-center gap-2">
-              <input type="checkbox" id="adjOutsideOrg" class="rounded text-indigo-600" />
+              <input type="checkbox" id="adjOutsideOrg" class="rounded text-indigo-600">
               <label for="adjOutsideOrg" class="font-semibold text-slate-700">Expenses covered by outside organization</label>
             </div>
             <div class="md:col-span-7">
-              <input type="text" id="adjOutsideOrgNotes" placeholder="Notes (e.g. Host providing 2 meals)" class="chk-input w-full border rounded p-1 text-xs" />
+              <input type="text" id="adjOutsideOrgNotes" placeholder="Notes (e.g. Host providing 2 meals)" class="chk-input w-full border rounded p-1 text-xs field-empty">
             </div>
           </div>
 
           <div class="grid grid-cols-1 md:grid-cols-12 gap-2 items-center bg-white p-2 rounded border">
             <div class="md:col-span-5 flex items-center gap-2">
-              <input type="checkbox" id="adjPersonalTime" class="rounded text-indigo-600" />
+              <input type="checkbox" id="adjPersonalTime" class="rounded text-indigo-600">
               <label for="adjPersonalTime" class="font-semibold text-slate-700">Adding personal time to travel</label>
             </div>
             <div class="md:col-span-7">
-              <input type="text" id="adjPersonalTimeNotes" placeholder="Notes (e.g. Personal leg added Dec 10-12)" class="chk-input w-full border rounded p-1 text-xs" />
+              <input type="text" id="adjPersonalTimeNotes" placeholder="Notes (e.g. Personal leg added Dec 10-12)" class="chk-input w-full border rounded p-1 text-xs field-empty">
             </div>
           </div>
 
           <div class="grid grid-cols-1 md:grid-cols-12 gap-2 items-center bg-white p-2 rounded border">
             <div class="md:col-span-5 flex items-center gap-2">
-              <input type="checkbox" id="adjAltLocation" class="rounded text-indigo-600" />
+              <input type="checkbox" id="adjAltLocation" class="rounded text-indigo-600">
               <label for="adjAltLocation" class="font-semibold text-slate-700">Starting/stopping in non-home location</label>
             </div>
             <div class="md:col-span-7">
-              <input type="text" id="adjAltLocationNotes" placeholder="Notes (e.g. Departing from field site in SFO)" class="chk-input w-full border rounded p-1 text-xs" />
+              <input type="text" id="adjAltLocationNotes" placeholder="Notes (e.g. Departing from field site in SFO)" class="chk-input w-full border rounded p-1 text-xs field-empty">
             </div>
           </div>
         </div>
       </section>
 
-      <!-- 7. Dynamic Cost Centers -->
+      <!-- 8. Dynamic Cost Centers -->
       <section class="border p-4 rounded-lg bg-white border-slate-200">
         <div class="flex justify-between items-center mb-3">
           <div>
-            <h2 class="text-md font-semibold text-slate-800">7. Cost Center Allocations (TA Form Page 2)</h2>
+            <h2 class="text-md font-semibold text-slate-800">8. Cost Center Allocations (TA Form Page 2)</h2>
             <p class="text-xs text-slate-500">Add grant cost center numbers to cover trip funding (All rows populate Page 2).</p>
           </div>
           <button type="button" onclick="addCostCenterRow()" class="px-3 py-1 bg-indigo-600 hover:bg-indigo-700 text-white rounded text-xs font-semibold shadow">
@@ -221,19 +424,19 @@
         <div id="costCentersContainer" class="space-y-3"></div>
       </section>
 
-      <!-- 8. Additional General PDF Attachments Uploader -->
+      <!-- 9. Additional General PDF Attachments Uploader -->
       <section class="border p-4 rounded-lg bg-slate-50 border-slate-200">
-        <h2 class="text-md font-semibold text-slate-800 mb-1">8. Additional Supporting PDF Attachments</h2>
+        <h2 class="text-md font-semibold text-slate-800 mb-1">9. Additional Supporting PDF Attachments</h2>
         <p class="text-xs text-slate-500 mb-2">Upload any external PDF files to be merged into the collated package.</p>
-        <input type="file" id="generalPdfUpload" accept="application/pdf" multiple onchange="handleGeneralPdfUpload(event)" class="text-xs text-slate-600" />
+        <input type="file" id="generalPdfUpload" accept="application/pdf" multiple="" onchange="handleGeneralPdfUpload(event)" class="text-xs text-slate-600">
         <div id="generalPdfList" class="mt-2 text-xs text-slate-600 space-y-1"></div>
       </section>
 
-      <!-- 9. TA Template Selector -->
+      <!-- 10. TA Template Selector -->
       <section class="p-4 bg-amber-50 border border-amber-200 rounded-lg">
         <label class="block text-xs font-bold text-amber-800 mb-1">TA PDF Template File</label>
         <p class="text-xs text-amber-700 mb-2">Ensure <code>TA_Template.pdf</code> is stored in the repository root or select it below.</p>
-        <input type="file" id="pdfTemplateInput" accept="application/pdf" class="text-xs text-slate-600" />
+        <input type="file" id="pdfTemplateInput" accept="application/pdf" class="text-xs text-slate-600">
       </section>
 
       <!-- Action Buttons -->
@@ -263,6 +466,7 @@
 
   <script>
     let legCounter = 0;
+    let conferenceCounter = 0;
     let flightCounter = 0;
     let hotelCounter = 0;
     let mileageCounter = 0;
@@ -380,6 +584,92 @@
         if (parseFloat(lodgingInput.value) === 0) lodgingInput.value = 225;
       }
       calculateTotals();
+    }
+
+    // --- Dynamic Conference Registration Section ---
+    function addConferenceRow(data = {}) {
+      conferenceCounter++;
+      const id = conferenceCounter;
+      const container = document.getElementById('conferencesContainer');
+
+      const addFees = data.addFees || [
+        { name: 'Abstract Submission Fee', amt: '' }
+      ];
+
+      const html = `
+        <div id="confRow_${id}" class="p-3 bg-teal-50/50 border border-teal-200 rounded-lg shadow-sm space-y-3 relative">
+          <div class="flex justify-between items-center border-b border-teal-200 pb-1">
+            <span class="text-xs font-bold text-teal-900">🏛️ Conference #${id}</span>
+            ${container.children.length > 0 ? `<button type="button" onclick="removeConferenceRow(${id})" class="text-red-600 hover:text-red-800 text-xs font-bold">✕ Remove Conference</button>` : ''}
+          </div>
+
+          <div class="grid grid-cols-1 md:grid-cols-5 gap-2 text-xs">
+            <div>
+              <label class="block text-slate-600 font-medium mb-0.5">Conference Name</label>
+              <input type="text" id="confName_${id}" value="${data.name || ''}" placeholder="AGU Fall Meeting 2026" class="chk-input w-full border rounded p-1.5" />
+            </div>
+            <div>
+              <label class="block text-slate-600 font-medium mb-0.5">Start Date</label>
+              <input type="date" id="confStart_${id}" value="${data.start || ''}" class="chk-input w-full border rounded p-1.5" onchange="calculateTotals()" />
+            </div>
+            <div>
+              <label class="block text-slate-600 font-medium mb-0.5">End Date</label>
+              <input type="date" id="confEnd_${id}" value="${data.end || ''}" class="chk-input w-full border rounded p-1.5" onchange="calculateTotals()" />
+            </div>
+            <div>
+              <label class="block text-slate-600 font-medium mb-0.5">Conference Website</label>
+              <input type="url" id="confWebsite_${id}" value="${data.website || ''}" placeholder="https://www.agu.org/fall-meeting" class="chk-input w-full border rounded p-1.5" />
+            </div>
+            <div>
+              <label class="block text-slate-600 font-medium mb-0.5">Meeting Reg Fee ($)</label>
+              <input type="number" id="confRegFee_${id}" value="${data.regFee !== undefined ? data.regFee : ''}" placeholder="450.00" step="0.01" class="chk-input w-full border rounded p-1.5" oninput="calculateTotals()" />
+            </div>
+          </div>
+
+          <!-- Sub-section: Additional Fees (Populates TA "Other-Specify") -->
+          <div class="bg-white p-2.5 rounded border border-slate-200 space-y-2">
+            <div class="flex justify-between items-center">
+              <div>
+                <span class="text-[11px] font-bold text-slate-700">Additional Conference Fees</span>
+                <p class="text-[10px] text-slate-500">Populates the TA Form "Other-Specify" line (e.g., Abstract fees, workshop fees).</p>
+              </div>
+              <button type="button" onclick="addConfFeeItem(${id})" class="px-2 py-0.5 bg-slate-100 hover:bg-slate-200 text-slate-700 text-[11px] font-semibold rounded border border-slate-300">
+                ➕ Add Fee Item
+              </button>
+            </div>
+            <div id="confAddFeesContainer_${id}" class="space-y-1.5"></div>
+          </div>
+        </div>
+      `;
+
+      container.insertAdjacentHTML('beforeend', html);
+
+      addFees.forEach(f => addConfFeeItem(id, f.name, f.amt));
+      updateFieldHighlights();
+      calculateTotals();
+    }
+
+    function removeConferenceRow(id) {
+      const el = document.getElementById(`confRow_${id}`);
+      if (el) el.remove();
+      calculateTotals();
+      updateFieldHighlights();
+    }
+
+    function addConfFeeItem(confId, feeName = '', feeAmt = '') {
+      const container = document.getElementById(`confAddFeesContainer_${confId}`);
+      if (!container) return;
+      const itemId = Date.now() + Math.floor(Math.random() * 1000);
+
+      const html = `
+        <div id="confFeeItem_${confId}_${itemId}" class="flex items-center gap-2 text-xs">
+          <input type="text" placeholder="Fee Name (e.g. Abstract Submission Fee)" value="${feeName}" class="conf-fee-name chk-input w-2/3 border rounded p-1 text-xs" />
+          <input type="number" placeholder="Amt ($)" value="${feeAmt}" step="0.01" oninput="calculateTotals()" class="conf-fee-amt chk-input w-1/3 border rounded p-1 text-xs" />
+          <button type="button" onclick="this.parentElement.remove(); calculateTotals(); updateFieldHighlights();" class="text-red-500 hover:text-red-700 font-bold px-1 text-xs">✕</button>
+        </div>
+      `;
+      container.insertAdjacentHTML('beforeend', html);
+      updateFieldHighlights();
     }
 
     // --- Dynamic Flights ---
@@ -753,7 +1043,7 @@
           validationErrors.push(`⚠️ Leg #${allLegs[i].id} starts (${allLegs[i].startStr}) before previous Leg #${allLegs[i-1].id} ends (${allLegs[i-1].endStr}).`);
           allLegs[i].startEl.classList.add('field-invalid');
         } else if (diffDays > 1) {
-          validationErrors.push(`⚠️ Gap detected: ${diffDays - 1} unallocated day(s) between Leg #${allLegs[i-1].id} (${allLegs[i-1].endStr}) and Leg #${allLegs[i].id} (${allLegs[i].startStr}).`);
+          validationErrors.push(`⚠️ Gap detected: ${diffDays - 1} unallocated day(s) between Leg #${allLegs[i-1].id} (${allLegs[i-1].endStr}) and Leg #${allLegs[i].startStr}).`);
         }
       }
 
@@ -764,11 +1054,13 @@
         banner.classList.add('hidden');
       }
 
+      // Airfare calculations
       let airfareTotal = 0;
       document.querySelectorAll('[id^="flSelPrice_"]').forEach(el => {
         airfareTotal += parseFloat(el.value) || 0;
       });
 
+      // Ground Mileage calculations
       let mileageTotal = 0;
       document.querySelectorAll('[id^="mileageRow_"]').forEach(row => {
         const id = row.id.split('_')[1];
@@ -777,7 +1069,28 @@
         mileageTotal += (dist * rate);
       });
 
-      const regFee = parseFloat(document.getElementById('conferenceRegFee').value) || 0;
+      // Conference Registration & Additional Fees calculations
+      let totalConfRegFee = 0;
+      let totalConfAddFee = 0;
+      let confAddFeeDescriptions = [];
+
+      document.querySelectorAll('[id^="confRow_"]').forEach(row => {
+        const id = row.id.split('_')[1];
+        const regFee = parseFloat(document.getElementById(`confRegFee_${id}`)?.value) || 0;
+        totalConfRegFee += regFee;
+
+        // Parse fee items within this conference
+        const feeNames = row.querySelectorAll('.conf-fee-name');
+        const feeAmts = row.querySelectorAll('.conf-fee-amt');
+        feeNames.forEach((nEl, idx) => {
+          const nameStr = nEl.value.trim() || 'Additional Fee';
+          const amtVal = parseFloat(feeAmts[idx]?.value) || 0;
+          if (amtVal > 0) {
+            totalConfAddFee += amtVal;
+            confAddFeeDescriptions.push(`${nameStr} ($${amtVal.toFixed(2)})`);
+          }
+        });
+      });
 
       if (allLegs.length === 0) {
         document.getElementById('calcDays').innerText = "0";
@@ -785,9 +1098,11 @@
         document.getElementById('calcMeals').innerText = "0.00";
         document.getElementById('calcLodging').innerText = "0.00";
         document.getElementById('calcAirfareTotal').innerText = airfareTotal.toFixed(2);
+        document.getElementById('calcConfRegTotal').innerText = totalConfRegFee.toFixed(2);
+        document.getElementById('calcConfAddTotal').innerText = totalConfAddFee.toFixed(2);
         document.getElementById('calcMileageTotal').innerText = mileageTotal.toFixed(2);
-        document.getElementById('calcGrandTotal').innerText = (airfareTotal + mileageTotal + regFee).toFixed(2);
-        return { totalDays: 0, bizDays: 0, mealTotal: 0, lodgingTotal: 0, airfareTotal, mileageTotal, regFee, grandTotal: airfareTotal + mileageTotal + regFee, overallStart: '', overallEnd: '', legs: allLegs };
+        document.getElementById('calcGrandTotal').innerText = (airfareTotal + mileageTotal + totalConfRegFee + totalConfAddFee).toFixed(2);
+        return { totalDays: 0, bizDays: 0, mealTotal: 0, lodgingTotal: 0, airfareTotal, mileageTotal, regFee: totalConfRegFee, addFee: totalConfAddFee, addFeeDesc: confAddFeeDescriptions.join(', '), grandTotal: airfareTotal + mileageTotal + totalConfRegFee + totalConfAddFee, overallStart: '', overallEnd: '', legs: allLegs };
       }
 
       const overallStart = allLegs[0].start;
@@ -818,13 +1133,15 @@
         current.setDate(current.getDate() + 1);
       }
 
-      const grandTotal = mealTotal + lodgingTotal + airfareTotal + mileageTotal + regFee;
+      const grandTotal = mealTotal + lodgingTotal + airfareTotal + mileageTotal + totalConfRegFee + totalConfAddFee;
 
       document.getElementById('calcDays').innerText = totalDays;
       document.getElementById('calcBizDays').innerText = bizDays;
       document.getElementById('calcMeals').innerText = mealTotal.toFixed(2);
       document.getElementById('calcLodging').innerText = lodgingTotal.toFixed(2);
       document.getElementById('calcAirfareTotal').innerText = airfareTotal.toFixed(2);
+      document.getElementById('calcConfRegTotal').innerText = totalConfRegFee.toFixed(2);
+      document.getElementById('calcConfAddTotal').innerText = totalConfAddFee.toFixed(2);
       document.getElementById('calcMileageTotal').innerText = mileageTotal.toFixed(2);
       document.getElementById('calcGrandTotal').innerText = grandTotal.toFixed(2);
 
@@ -835,7 +1152,9 @@
         lodgingTotal,
         airfareTotal,
         mileageTotal,
-        regFee,
+        regFee: totalConfRegFee,
+        addFee: totalConfAddFee,
+        addFeeDesc: confAddFeeDescriptions.join(', '),
         grandTotal,
         overallStart: allLegs[0].startStr,
         overallEnd: allLegs[allLegs.length - 1].endStr,
@@ -907,7 +1226,6 @@
         travelerName: document.getElementById('travelerName').value,
         taNumber: document.getElementById('taNumber').value,
         businessPurpose: document.getElementById('businessPurpose').value,
-        conferenceRegFee: document.getElementById('conferenceRegFee').value,
         travelAdjustments: {
           family: document.getElementById('adjFamily').checked,
           familyNotes: document.getElementById('adjFamilyNotes').value,
@@ -921,6 +1239,7 @@
           altLocationNotes: document.getElementById('adjAltLocationNotes').value,
         },
         legs: [],
+        conferences: [],
         flights: [],
         hotels: [],
         mileageTrips: [],
@@ -938,6 +1257,24 @@
           purpose: document.getElementById(`legPurpose_${id}`).value,
           mealRate: document.getElementById(`legMealRate_${id}`).value,
           lodgingRate: document.getElementById(`legLodgingRate_${id}`).value
+        });
+      });
+
+      document.querySelectorAll('[id^="confRow_"]').forEach(row => {
+        const id = row.id.split('_')[1];
+        const addFees = [];
+        row.querySelectorAll('.conf-fee-name').forEach((nEl, idx) => {
+          const amtEl = row.querySelectorAll('.conf-fee-amt')[idx];
+          addFees.push({ name: nEl.value, amt: amtEl.value });
+        });
+
+        data.conferences.push({
+          name: document.getElementById(`confName_${id}`).value,
+          start: document.getElementById(`confStart_${id}`).value,
+          end: document.getElementById(`confEnd_${id}`).value,
+          website: document.getElementById(`confWebsite_${id}`).value,
+          regFee: document.getElementById(`confRegFee_${id}`).value,
+          addFees
         });
       });
 
@@ -1009,6 +1346,7 @@
           const data = JSON.parse(e.target.result);
 
           document.getElementById('legsContainer').innerHTML = '';
+          document.getElementById('conferencesContainer').innerHTML = '';
           document.getElementById('flightsContainer').innerHTML = '';
           document.getElementById('hotelsContainer').innerHTML = '';
           document.getElementById('mileageContainer').innerHTML = '';
@@ -1033,6 +1371,7 @@
           }
 
           if (data.legs && data.legs.length) data.legs.forEach(l => addLegRow(l)); else addLegRow();
+          if (data.conferences && data.conferences.length) data.conferences.forEach(c => addConferenceRow(c)); else addConferenceRow();
           if (data.flights && data.flights.length) data.flights.forEach(f => addFlightRow(f)); else addFlightRow();
           if (data.hotels && data.hotels.length) data.hotels.forEach(h => addHotelRow(h)); else addHotelRow();
           if (data.mileageTrips && data.mileageTrips.length) data.mileageTrips.forEach(m => addMileageRow(m)); else addMileageRow();
@@ -1099,9 +1438,15 @@
       setField('Total#2', totals.airfareTotal.toFixed(2));
 
       if (totals.regFee > 0) {
-        setField('MEETING REGISTRATION', `Conference Fee`);
+        setField('MEETING REGISTRATION', `Conference Registration`);
         setField('DATES#5', totals.overallStart);
         setField('Total#5', totals.regFee.toFixed(2));
+      }
+
+      if (totals.addFee > 0) {
+        setField('OTHERSPECIFYRow1', totals.addFeeDesc || 'Additional Conference Fees');
+        setField('DATES#9', totals.overallStart);
+        setField('Total#9', totals.addFee.toFixed(2));
       }
 
       if (totals.mileageTotal > 0) {
@@ -1288,6 +1633,35 @@
         }
       });
 
+      // Parse Conferences Chronologically
+      document.querySelectorAll('[id^="confRow_"]').forEach(row => {
+        const id = row.id.split('_')[1];
+        const start = document.getElementById(`confStart_${id}`)?.value;
+        const end = document.getElementById(`confEnd_${id}`)?.value;
+        const cName = document.getElementById(`confName_${id}`)?.value || 'Conference';
+        const website = document.getElementById(`confWebsite_${id}`)?.value || '';
+
+        if (start && end && start === end) {
+          timelineEvents.push({
+            date: start,
+            desc: `🏛️ Attending Conference: ${cName}${website ? ' (' + website + ')' : ''}`
+          });
+        } else {
+          if (start) {
+            timelineEvents.push({
+              date: start,
+              desc: `🏛️ Conference Starts: ${cName}${website ? ' (' + website + ')' : ''}${end ? ' (thru ' + formatDateWithDay(end) + ')' : ''}`
+            });
+          }
+          if (end && end !== start) {
+            timelineEvents.push({
+              date: end,
+              desc: `🏛️ Conference Ends: ${cName}`
+            });
+          }
+        }
+      });
+
       // Parse Flights
       document.querySelectorAll('[id^="flightRow_"]').forEach(row => {
         const id = row.id.split('_')[1];
@@ -1349,7 +1723,7 @@
       });
 
       // Sort Events Chronologically
-      timelineEvents.sort((a, b) => (a.date > b.date ? 1 : -1));
+      timelineEvents.sort((a, b) => (a.date > b.date ? 1 : a.date < b.date ? -1 : 0));
 
       // Group Events by Date for Narrative Cleanliness
       const groupedMap = {};
@@ -1406,6 +1780,7 @@
                 ['Lodging Total (Business Days)', `$${totals.lodgingTotal.toFixed(2)}`],
                 ['Airfare Total', `$${totals.airfareTotal.toFixed(2)}`],
                 ['Meeting Registration Fee', `$${totals.regFee.toFixed(2)}`],
+                ['Other / Additional Conference Fees', `$${totals.addFee.toFixed(2)}`],
                 ['Ground Mileage Total', `$${totals.mileageTotal.toFixed(2)}`],
                 [{ text: 'Total Estimated Expenses', bold: true }, { text: `$${totals.grandTotal.toFixed(2)}`, bold: true }]
               ]
@@ -1495,6 +1870,7 @@
     // Initialize Default Rows
     window.addEventListener('DOMContentLoaded', () => {
       addLegRow();
+      addConferenceRow();
       addFlightRow();
       addHotelRow();
       addMileageRow();
