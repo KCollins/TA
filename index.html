@@ -161,7 +161,7 @@
         <div class="flex justify-between items-center mb-3">
           <div>
             <h2 class="text-md font-semibold text-slate-800">4. Flight Quotes &amp; Comparisons</h2>
-            <p class="text-xs text-slate-500">Document round-trip/one-way flights, search Google Flights, indicate comparison reasons, and paste or upload comparison screenshots.</p>
+            <p class="text-xs text-slate-500">Document round-trip/one-way flights, search Google Flights, indicate comparison reasons and comparable pricing, and paste or upload comparison screenshots.</p>
           </div>
           <button type="button" onclick="addFlightRow()" class="px-3 py-1 bg-sky-600 hover:bg-sky-700 text-white rounded text-xs font-semibold shadow">
             ➕ Add Flight Comparison
@@ -276,7 +276,7 @@
           <div class="flex justify-between items-center flex-wrap gap-2">
             <div>
               <h3 class="font-bold text-indigo-900">🛏️ Single-Occupancy Comparison</h3>
-              <p class="text-[11px] text-slate-600">Required when traveling with partner/family or in a shared rooming situation. Confirm cost equivalence, add a comment, and paste or upload a comparison screenshot.</p>
+              <p class="text-[11px] text-slate-600">Required when traveling with partner/family or in a shared rooming situation. Confirm cost equivalence or enter the lower single-occupancy comp total, add a comment, and paste or upload a comparison screenshot.</p>
             </div>
             <label class="px-2.5 py-1 bg-indigo-600 hover:bg-indigo-700 text-white rounded text-[11px] font-semibold cursor-pointer shadow-sm">
               🖼️ Upload Screenshot(s)
@@ -284,11 +284,36 @@
             </label>
           </div>
 
-          <div class="bg-white p-2.5 rounded border border-indigo-100 space-y-2">
+          <div class="bg-white p-2.5 rounded border border-indigo-100 space-y-2.5">
             <label class="flex items-center gap-2 cursor-pointer font-semibold text-slate-800">
               <input type="checkbox" id="htSingleOccConfirmed" class="rounded text-indigo-600" onchange="syncSharedRoomCheckbox()">
               <span>Confirmed that multiple occupancy is same cost as single occupancy</span>
             </label>
+
+            <!-- Single-Occupancy Comp Price Radio Options -->
+            <div class="p-2.5 bg-indigo-50/50 border border-indigo-100 rounded space-y-1.5">
+              <div class="font-bold text-indigo-950">Comp price is:</div>
+              <label class="flex items-center gap-2 cursor-pointer text-slate-700">
+                <input type="radio" name="htSingleOccCompMode" value="higher_or_equiv" onchange="calculateTotals()" class="text-indigo-600">
+                <span>Higher or equivalent (reimburse full amount)</span>
+              </label>
+              <div class="flex items-center gap-2 flex-wrap">
+                <label class="flex items-center gap-2 cursor-pointer text-slate-700 shrink-0">
+                  <input type="radio" name="htSingleOccCompMode" id="htSingleOccCompLessRadio" value="less" onchange="calculateTotals()" class="text-indigo-600">
+                  <span>Less (reimburse comp amount)</span>
+                </label>
+                <div class="flex items-center gap-1">
+                  <span class="text-slate-500 font-semibold">$</span>
+                  <input type="number" id="htSingleOccCompPrice" placeholder="Total Comp ($)" step="0.01" oninput="document.getElementById('htSingleOccCompLessRadio').checked = true; calculateTotals();" class="chk-input w-36 border rounded p-1 text-xs field-empty">
+                </div>
+              </div>
+              <label class="flex items-center gap-2 cursor-pointer text-slate-700">
+                <input type="radio" name="htSingleOccCompMode" value="not_available" checked onchange="calculateTotals()" class="text-indigo-600">
+                <span>Not available (reimburse full amount)</span>
+              </label>
+              <div id="htSingleOccReimbStatus" class="text-[11px] font-semibold text-indigo-900 pt-0.5"></div>
+            </div>
+
             <div>
               <label class="block text-[11px] font-semibold text-slate-600 mb-0.5">Comment / Rate Comparison Notes</label>
               <input type="text" id="htSingleOccComment" placeholder="e.g. Single and double queen rooms are both $225/night (see screenshot below)" class="chk-input w-full border rounded p-1.5 text-xs field-empty">
@@ -571,6 +596,7 @@
       } else {
         section.classList.add('hidden');
       }
+      calculateTotals();
     }
 
     function syncSharedRoomCheckbox() {
@@ -579,6 +605,14 @@
       if (subCb && confirmed) {
         subCb.checked = true;
       }
+      if (confirmed) {
+        const currentMode = document.querySelector('input[name="htSingleOccCompMode"]:checked')?.value;
+        if (currentMode === 'not_available') {
+          const equivRadio = document.querySelector('input[name="htSingleOccCompMode"][value="higher_or_equiv"]');
+          if (equivRadio) equivRadio.checked = true;
+        }
+      }
+      calculateTotals();
     }
 
     // --- Image Normalization & Clipboard Paste / Upload Handlers ---
@@ -989,16 +1023,19 @@
       const id = flightCounter;
       const container = document.getElementById('flightsContainer');
       const reasons = data.compReasons || {};
+      const compPriceMode = data.compPriceMode || 'not_available';
+      const compPrice = data.compPrice !== undefined ? data.compPrice : '';
 
       const html = `
         <div id="flightRow_${id}" class="border p-3 rounded bg-slate-50/50 space-y-2 relative border-slate-200">
-          <div class="flex justify-between items-center border-b pb-1">
+          <div class="flex justify-between items-center border-b pb-1 flex-wrap gap-2">
             <div class="flex items-center gap-2">
               <span class="text-xs font-bold text-sky-900">Flight #${id}</span>
               <select id="flType_${id}" onchange="toggleFlightType(${id})" class="chk-input text-[11px] font-semibold border rounded p-0.5 bg-white">
                 <option value="Round Trip" ${data.type === 'One Way' ? '' : 'selected'}>🔄 Round Trip</option>
                 <option value="One Way" ${data.type === 'One Way' ? 'selected' : ''}>➡️ One Way</option>
               </select>
+              <span id="flRowReimbBadge_${id}" class="text-[11px] font-bold text-slate-600"></span>
             </div>
             <div class="flex items-center gap-2">
               <button type="button" onclick="openGoogleFlights(${id})" class="px-2 py-0.5 bg-sky-100 hover:bg-sky-200 text-sky-800 text-[11px] font-semibold rounded border border-sky-300">
@@ -1036,26 +1073,51 @@
                 <input type="text" id="flSelNotes_${id}" value="${data.selNotes || ''}" placeholder="Notes (e.g. Lowest logical non-stop fare)" class="chk-input w-full border rounded p-1" />
               </div>
             </div>
-            <div class="bg-sky-50/70 p-2.5 rounded border border-sky-200 space-y-1.5 text-xs">
-              <h4 class="text-[11px] font-bold text-sky-900">Reasons you might need comps for flights:</h4>
-              <label class="flex items-start gap-2 cursor-pointer text-slate-700">
-                <input type="checkbox" id="flCompReasonPersonalLeg_${id}" ${reasons.personalLeg ? 'checked' : ''} class="mt-0.5 rounded text-sky-600">
-                <span>if you are taking a personal leg (compare to dates without personal leg)</span>
-              </label>
-              <label class="flex items-start gap-2 cursor-pointer text-slate-700">
-                <input type="checkbox" id="flCompReasonDiffLoc_${id}" ${reasons.diffLoc ? 'checked' : ''} class="mt-0.5 rounded text-sky-600">
-                <span>if you are traveling to a different location</span>
-              </label>
-              <label class="flex items-start gap-2 cursor-pointer text-slate-700">
-                <input type="checkbox" id="flCompReasonGround_${id}" ${reasons.ground ? 'checked' : ''} class="mt-0.5 rounded text-sky-600">
-                <span>Special travel case: Taking ground transport instead of flying requires comps</span>
-              </label>
-              <div class="flex items-center gap-2 pt-0.5">
-                <label class="flex items-center gap-2 cursor-pointer text-slate-700 shrink-0">
-                  <input type="checkbox" id="flCompReasonOther_${id}" ${reasons.other ? 'checked' : ''} class="rounded text-sky-600">
-                  <span>Other:</span>
+            <div class="bg-sky-50/70 p-2.5 rounded border border-sky-200 space-y-2 text-xs">
+              <div class="space-y-1.5">
+                <h4 class="text-[11px] font-bold text-sky-900">Reasons you might need comps for flights:</h4>
+                <label class="flex items-start gap-2 cursor-pointer text-slate-700">
+                  <input type="checkbox" id="flCompReasonPersonalLeg_${id}" ${reasons.personalLeg ? 'checked' : ''} onchange="calculateTotals()" class="mt-0.5 rounded text-sky-600">
+                  <span>if you are taking a personal leg (compare to dates without personal leg)</span>
                 </label>
-                <input type="text" id="flCompReasonOtherNotes_${id}" value="${(reasons.otherNotes || '').replace(/"/g, '&quot;')}" oninput="if(this.value.trim()) document.getElementById('flCompReasonOther_${id}').checked = true;" placeholder="Specify other reason" class="chk-input w-full border rounded p-1 text-xs" />
+                <label class="flex items-start gap-2 cursor-pointer text-slate-700">
+                  <input type="checkbox" id="flCompReasonDiffLoc_${id}" ${reasons.diffLoc ? 'checked' : ''} onchange="calculateTotals()" class="mt-0.5 rounded text-sky-600">
+                  <span>if you are traveling to a different location</span>
+                </label>
+                <label class="flex items-start gap-2 cursor-pointer text-slate-700">
+                  <input type="checkbox" id="flCompReasonGround_${id}" ${reasons.ground ? 'checked' : ''} onchange="calculateTotals()" class="mt-0.5 rounded text-sky-600">
+                  <span>Special travel case: Taking ground transport instead of flying requires comps</span>
+                </label>
+                <div class="flex items-center gap-2 pt-0.5">
+                  <label class="flex items-center gap-2 cursor-pointer text-slate-700 shrink-0">
+                    <input type="checkbox" id="flCompReasonOther_${id}" ${reasons.other ? 'checked' : ''} onchange="calculateTotals()" class="rounded text-sky-600">
+                    <span>Other:</span>
+                  </label>
+                  <input type="text" id="flCompReasonOtherNotes_${id}" value="${(reasons.otherNotes || '').replace(/"/g, '&quot;')}" oninput="if(this.value.trim()) document.getElementById('flCompReasonOther_${id}').checked = true; calculateTotals();" placeholder="Specify other reason" class="chk-input w-full border rounded p-1 text-xs" />
+                </div>
+              </div>
+
+              <!-- Flight Comp Price Radio Options -->
+              <div class="border-t border-sky-200 pt-2 space-y-1.5">
+                <div class="text-[11px] font-bold text-sky-950">Comp price is:</div>
+                <label class="flex items-center gap-2 cursor-pointer text-slate-700">
+                  <input type="radio" name="flCompPriceMode_${id}" value="higher_or_equiv" ${compPriceMode === 'higher_or_equiv' ? 'checked' : ''} onchange="calculateTotals()" class="text-sky-600">
+                  <span>Higher or equivalent (reimburse full amount)</span>
+                </label>
+                <div class="flex items-center gap-2 flex-wrap">
+                  <label class="flex items-center gap-2 cursor-pointer text-slate-700 shrink-0">
+                    <input type="radio" name="flCompPriceMode_${id}" id="flCompLessRadio_${id}" value="less" ${compPriceMode === 'less' ? 'checked' : ''} onchange="calculateTotals()" class="text-sky-600">
+                    <span>Less (reimburse comp amount)</span>
+                  </label>
+                  <div class="flex items-center gap-1">
+                    <span class="text-slate-500 font-semibold">$</span>
+                    <input type="number" id="flCompPrice_${id}" value="${compPrice}" placeholder="Comp ($)" step="0.01" oninput="document.getElementById('flCompLessRadio_${id}').checked = true; calculateTotals();" class="chk-input w-28 border rounded p-1 text-xs" />
+                  </div>
+                </div>
+                <label class="flex items-center gap-2 cursor-pointer text-slate-700">
+                  <input type="radio" name="flCompPriceMode_${id}" value="not_available" ${compPriceMode === 'not_available' ? 'checked' : ''} onchange="calculateTotals()" class="text-sky-600">
+                  <span>Not available (reimburse full amount)</span>
+                </label>
               </div>
             </div>
           </div>
@@ -1124,11 +1186,12 @@
       return reasons;
     }
 
-    function hasAnyFlightCompReason() {
+    function hasAnyFlightCompActivity() {
       let found = false;
       document.querySelectorAll('[id^="flightRow_"]').forEach(row => {
         const id = row.id.split('_')[1];
-        if (getFlightCompReasonsForRow(id).length > 0) {
+        const mode = document.querySelector(`input[name="flCompPriceMode_${id}"]:checked`)?.value || 'not_available';
+        if (getFlightCompReasonsForRow(id).length > 0 || mode !== 'not_available') {
           found = true;
         }
       });
@@ -1434,6 +1497,40 @@
       });
     }
 
+    // --- Helper to evaluate Lodging Single-Occupancy Comp adjustment ---
+    function evaluateHotelSingleOccComp(rawLodgingTotal) {
+      const isFamilyOrShared = !!(document.getElementById('adjFamily')?.checked || document.getElementById('adjSharedRoom')?.checked);
+      const compMode = document.querySelector('input[name="htSingleOccCompMode"]:checked')?.value || 'not_available';
+      const compRaw = document.getElementById('htSingleOccCompPrice')?.value ?? '';
+      const compVal = parseFloat(compRaw);
+      const hasValidComp = isFamilyOrShared && compMode === 'less' && compRaw !== '' && !isNaN(compVal);
+
+      const effectiveLodgingTotal = hasValidComp
+        ? (rawLodgingTotal > 0 ? Math.min(rawLodgingTotal, compVal) : compVal)
+        : rawLodgingTotal;
+      const isCapped = hasValidComp && (rawLodgingTotal === 0 || compVal < rawLodgingTotal);
+
+      const statusEl = document.getElementById('htSingleOccReimbStatus');
+      if (statusEl) {
+        if (isCapped) {
+          statusEl.innerText = `✓ Capped at lower single-occupancy comp: $${effectiveLodgingTotal.toFixed(2)} (vs. $${rawLodgingTotal.toFixed(2)} calculated/booked)`;
+        } else if (compMode === 'less' && compRaw !== '' && !isNaN(compVal)) {
+          statusEl.innerText = `Reimbursing lower amount: $${effectiveLodgingTotal.toFixed(2)} (calculated/booked is lower than or equal to $${compVal.toFixed(2)} comp)`;
+        } else {
+          statusEl.innerText = `Reimbursing full lodging amount: $${effectiveLodgingTotal.toFixed(2)}`;
+        }
+      }
+
+      return {
+        isFamilyOrShared,
+        compMode,
+        compVal: hasValidComp ? compVal : null,
+        rawLodgingTotal,
+        effectiveLodgingTotal,
+        isCapped
+      };
+    }
+
     // --- Calculation & Date Validation Engine ---
     function calculateTotals() {
       const banner = document.getElementById('dateValidationBanner');
@@ -1491,11 +1588,66 @@
         banner.classList.add('hidden');
       }
 
-      // Airfare calculations
+      // Airfare calculations (using lower of selected flight price vs. comp price when "Less" is selected)
+      let rawAirfareTotal = 0;
       let airfareTotal = 0;
-      document.querySelectorAll('[id^="flSelPrice_"]').forEach(el => {
-        airfareTotal += parseFloat(el.value) || 0;
+      let flightDetails = [];
+
+      document.querySelectorAll('[id^="flightRow_"]').forEach(row => {
+        const id = row.id.split('_')[1];
+        const flType = document.getElementById(`flType_${id}`)?.value || 'Round Trip';
+        const origin = document.getElementById(`flOrigin_${id}`)?.value || '';
+        const dest = document.getElementById(`flDest_${id}`)?.value || '';
+        const startDate = document.getElementById(`flStartDate_${id}`)?.value || '';
+        const endDate = document.getElementById(`flEndDate_${id}`)?.value || '';
+        const selCarrier = document.getElementById(`flSelCarrier_${id}`)?.value || '';
+        const selPrice = parseFloat(document.getElementById(`flSelPrice_${id}`)?.value) || 0;
+        const selNotes = document.getElementById(`flSelNotes_${id}`)?.value || '';
+        const compReasons = getFlightCompReasonsForRow(id);
+
+        const compPriceMode = document.querySelector(`input[name="flCompPriceMode_${id}"]:checked`)?.value || 'not_available';
+        const compRaw = document.getElementById(`flCompPrice_${id}`)?.value ?? '';
+        const compVal = parseFloat(compRaw);
+        const hasValidComp = (compPriceMode === 'less' && compRaw !== '' && !isNaN(compVal));
+
+        const reimbursablePrice = hasValidComp
+          ? (selPrice > 0 ? Math.min(selPrice, compVal) : compVal)
+          : selPrice;
+        const isCapped = hasValidComp && (selPrice === 0 || compVal < selPrice);
+
+        rawAirfareTotal += selPrice;
+        airfareTotal += reimbursablePrice;
+
+        const badgeEl = document.getElementById(`flRowReimbBadge_${id}`);
+        if (badgeEl) {
+          if (isCapped) {
+            badgeEl.innerText = `Reimbursable: $${reimbursablePrice.toFixed(2)} (Capped at Comp; Booked: $${selPrice.toFixed(2)})`;
+            badgeEl.className = 'text-[11px] font-bold text-emerald-700 bg-emerald-50 px-2 py-0.5 rounded border border-emerald-200';
+          } else {
+            badgeEl.innerText = `Reimbursable: $${reimbursablePrice.toFixed(2)}`;
+            badgeEl.className = 'text-[11px] font-bold text-slate-600';
+          }
+        }
+
+        flightDetails.push({
+          id,
+          type: flType,
+          origin,
+          dest,
+          startDate,
+          endDate,
+          selCarrier,
+          selPrice,
+          selNotes,
+          compReasons,
+          compPriceMode,
+          compPrice: hasValidComp ? compVal : null,
+          reimbursablePrice,
+          isCapped
+        });
       });
+
+      const airfareCapped = airfareTotal < rawAirfareTotal - 1e-6;
 
       // Ground Mileage (Personal Car) vs Taxi/Rideshare/Train/Shuttle calculations
       let personalMileageTotal = 0;
@@ -1612,11 +1764,13 @@
 
       if (allLegs.length === 0) {
         renderMealsMatrix([]);
-        const grandTotal = airfareTotal + personalMileageTotal + transitTaxiTotal + totalConfRegFee + totalConfAddFee + hotelTotalFromRows;
+        const htComp = evaluateHotelSingleOccComp(hotelTotalFromRows);
+        const effectiveLodgingTotal = htComp.effectiveLodgingTotal;
+        const grandTotal = airfareTotal + personalMileageTotal + transitTaxiTotal + totalConfRegFee + totalConfAddFee + effectiveLodgingTotal;
         document.getElementById('calcDays').innerText = "0";
         document.getElementById('calcBizDays').innerText = "0";
         document.getElementById('calcMeals').innerText = "0.00";
-        document.getElementById('calcLodging').innerText = hotelTotalFromRows.toFixed(2);
+        document.getElementById('calcLodging').innerText = effectiveLodgingTotal.toFixed(2);
         document.getElementById('calcAirfareTotal').innerText = airfareTotal.toFixed(2);
         document.getElementById('calcConfRegTotal').innerText = totalConfRegFee.toFixed(2);
         document.getElementById('calcConfAddTotal').innerText = totalConfAddFee.toFixed(2);
@@ -1625,8 +1779,11 @@
         document.getElementById('calcGrandTotal').innerText = grandTotal.toFixed(2);
         return {
           totalDays: 0, bizDays: 0, mealTotal: 0, baseMealTotal: 0, mealDeductionTotal: 0,
-          lodgingTotal: hotelTotalFromRows, lodgingPerDiemTotal: 0, usedHotelRows: hotelTotalFromRows > 0,
-          airfareTotal, mileageTotal: personalMileageTotal, transitTotal: transitTaxiTotal,
+          rawLodgingTotal: hotelTotalFromRows, lodgingTotal: effectiveLodgingTotal,
+          lodgingCapped: htComp.isCapped, hotelCompInfo: htComp,
+          lodgingPerDiemTotal: 0, usedHotelRows: hotelTotalFromRows > 0,
+          rawAirfareTotal, airfareTotal, airfareCapped, flightDetails,
+          mileageTotal: personalMileageTotal, transitTotal: transitTaxiTotal,
           regFee: totalConfRegFee, addFee: totalConfAddFee, addFeeDesc: confAddFeeDescriptions.join(', '),
           grandTotal, overallStart: '', overallEnd: '', legs: allLegs, dailySchedule: [],
           groundTripDetails, conferenceDetails, hotelDetails
@@ -1739,7 +1896,10 @@
       renderMealsMatrix(dailySchedule);
 
       const usedHotelRows = hotelTotalFromRows > 0;
-      const effectiveLodgingTotal = usedHotelRows ? hotelTotalFromRows : lodgingPerDiemTotal;
+      const rawLodgingTotal = usedHotelRows ? hotelTotalFromRows : lodgingPerDiemTotal;
+      const htComp = evaluateHotelSingleOccComp(rawLodgingTotal);
+      const effectiveLodgingTotal = htComp.effectiveLodgingTotal;
+
       const grandTotal = mealTotal + effectiveLodgingTotal + airfareTotal + personalMileageTotal + transitTaxiTotal + totalConfRegFee + totalConfAddFee;
 
       document.getElementById('calcDays').innerText = totalDays;
@@ -1759,10 +1919,16 @@
         mealTotal,
         baseMealTotal,
         mealDeductionTotal,
+        rawLodgingTotal,
         lodgingTotal: effectiveLodgingTotal,
+        lodgingCapped: htComp.isCapped,
+        hotelCompInfo: htComp,
         lodgingPerDiemTotal,
         usedHotelRows,
+        rawAirfareTotal,
         airfareTotal,
+        airfareCapped,
+        flightDetails,
         mileageTotal: personalMileageTotal,
         transitTotal: transitTaxiTotal,
         regFee: totalConfRegFee,
@@ -1861,6 +2027,8 @@
         },
         hotelSingleOccupancy: {
           confirmed: document.getElementById('htSingleOccConfirmed').checked,
+          compMode: document.querySelector('input[name="htSingleOccCompMode"]:checked')?.value || 'not_available',
+          compPrice: document.getElementById('htSingleOccCompPrice').value,
           comment: document.getElementById('htSingleOccComment').value,
           screenshots: hotelSingleOccScreenshots
         },
@@ -1931,6 +2099,8 @@
           selCarrier: document.getElementById(`flSelCarrier_${id}`).value,
           selPrice: document.getElementById(`flSelPrice_${id}`).value,
           selNotes: document.getElementById(`flSelNotes_${id}`).value,
+          compPriceMode: document.querySelector(`input[name="flCompPriceMode_${id}"]:checked`)?.value || 'not_available',
+          compPrice: document.getElementById(`flCompPrice_${id}`)?.value || '',
           compReasons: {
             personalLeg: !!document.getElementById(`flCompReasonPersonalLeg_${id}`)?.checked,
             diffLoc: !!document.getElementById(`flCompReasonDiffLoc_${id}`)?.checked,
@@ -2031,9 +2201,16 @@
 
           if (data.hotelSingleOccupancy) {
             document.getElementById('htSingleOccConfirmed').checked = !!data.hotelSingleOccupancy.confirmed;
+            const htCompMode = data.hotelSingleOccupancy.compMode || 'not_available';
+            const htRadio = document.querySelector(`input[name="htSingleOccCompMode"][value="${htCompMode}"]`);
+            if (htRadio) htRadio.checked = true;
+            document.getElementById('htSingleOccCompPrice').value = data.hotelSingleOccupancy.compPrice || '';
             document.getElementById('htSingleOccComment').value = data.hotelSingleOccupancy.comment || '';
             hotelSingleOccScreenshots = Array.isArray(data.hotelSingleOccupancy.screenshots) ? data.hotelSingleOccupancy.screenshots : [];
           } else {
+            const defaultHtRadio = document.querySelector('input[name="htSingleOccCompMode"][value="not_available"]');
+            if (defaultHtRadio) defaultHtRadio.checked = true;
+            document.getElementById('htSingleOccCompPrice').value = '';
             hotelSingleOccScreenshots = [];
           }
           renderHotelScreenshots();
@@ -2061,9 +2238,12 @@
 
           if (data.flights && data.flights.length) {
             data.flights.forEach((f, idx) => {
-              // Backwards compatibility if importing an older JSON draft with top-level flightCompReasons
+              // Backwards compatibility if importing an older JSON draft
               if (idx === 0 && !f.compReasons && data.flightCompReasons) {
                 f.compReasons = data.flightCompReasons;
+              }
+              if (!f.compPriceMode && f.compPrice !== undefined && f.compPrice !== '') {
+                f.compPriceMode = 'less';
               }
               addFlightRow(f);
             });
@@ -2160,13 +2340,14 @@
       setField('DATES#0', `${totals.overallStart} - ${totals.overallEnd}`);
       setField('Total#0', totals.mealTotal.toFixed(2));
 
-      // Lodging Per Diem & Rate column fill
+      // Lodging Per Diem & Rate column fill (uses reimbursable lodgingTotal)
       const lodgingRateVal = bizLegs[0]?.lodgingRate ? `$${bizLegs[0].lodgingRate}/night (Biz Legs)` : '';
       setField('undefined', lodgingRateVal);
       setField('LODGING Per Diem', lodgingRateVal);
       setField('DATES#1', `${totals.overallStart} - ${totals.overallEnd}`);
       setField('Total#1', totals.lodgingTotal.toFixed(2));
 
+      // Airfare (uses reimbursable airfareTotal, capped at lower comp if applicable)
       setField('DATES#2', totals.overallStart);
       setField('Total#2', totals.airfareTotal.toFixed(2));
 
@@ -2192,7 +2373,7 @@
         setField('Total#9', totals.addFee.toFixed(2));
       }
 
-      // Personal Car Mileage: format e.g. "86 mi @ $0.72/mi" instead of "Reimbursement"
+      // Personal Car Mileage: format e.g. "86 mi @ $0.72/mi"
       const personalTrips = totals.groundTripDetails.filter(t => t.mode === 'personal');
       if (totals.mileageTotal > 0 || personalTrips.length > 0) {
         const rateSet = new Set(personalTrips.map(t => t.truncRate.toFixed(2)));
@@ -2240,9 +2421,10 @@
       }
 
       // Comparable Lodging/Airfare Checkbox
-      const hasComps = hasAnyFlightCompReason() ||
+      const hasComps = hasAnyFlightCompActivity() ||
                        flightCompScreenshots.length > 0 ||
-                       hotelSingleOccScreenshots.length > 0;
+                       hotelSingleOccScreenshots.length > 0 ||
+                       (totals.hotelCompInfo?.isFamilyOrShared && totals.hotelCompInfo?.compMode !== 'not_available');
       if (hasComps) {
         checkBoxSafe('Comparables');
       }
@@ -2332,37 +2514,58 @@
     }
 
     function getFlightCompDocDefinition() {
+      const totals = calculateTotals();
       const todayFormatted = new Date().toLocaleDateString('en-US', { year: 'numeric', month: 'long', day: 'numeric' });
       let tableBody = [
         [
           { text: 'Flight Route & Dates', bold: true },
           { text: 'Selected Flight', bold: true },
-          { text: 'Price ($)', bold: true },
-          { text: 'Notes', bold: true },
-          { text: 'Comp Required Reason(s)', bold: true }
+          { text: 'Comp Price Comparison', bold: true },
+          { text: 'Reimbursable', bold: true },
+          { text: 'Comp Reason(s) & Notes', bold: true }
         ]
       ];
 
-      document.querySelectorAll('[id^="flightRow_"]').forEach(row => {
-        const id = row.id.split('_')[1];
-        const start = document.getElementById(`flStartDate_${id}`)?.value || '';
-        const end = document.getElementById(`flEndDate_${id}`)?.value || '';
-        const notes = document.getElementById(`flSelNotes_${id}`)?.value?.trim() || '—';
-        const reasons = getFlightCompReasonsForRow(id);
+      totals.flightDetails.forEach(fl => {
+        let compStatusStr = '';
+        if (fl.compPriceMode === 'higher_or_equiv') {
+          compStatusStr = 'Higher or equivalent\n(Reimburse full amount)';
+        } else if (fl.compPriceMode === 'less') {
+          const compAmtStr = fl.compPrice !== null ? `$${fl.compPrice.toFixed(2)}` : 'N/A';
+          compStatusStr = `Less — Comp: ${compAmtStr}\n(Reimburse lower amount)`;
+        } else {
+          compStatusStr = 'Not available\n(Reimburse full amount)';
+        }
+
+        const reimbCell = fl.isCapped
+          ? { text: `$${fl.reimbursablePrice.toFixed(2)}\n(Capped at comp)`, bold: true, fontSize: 9, color: '#047857' }
+          : { text: `$${fl.reimbursablePrice.toFixed(2)}`, bold: true, fontSize: 9 };
+
+        const detailItems = [...fl.compReasons];
+        if (fl.selNotes) detailItems.push(`Notes: ${fl.selNotes}`);
 
         tableBody.push([
-          { text: `${document.getElementById(`flOrigin_${id}`)?.value || ''} -> ${document.getElementById(`flDest_${id}`)?.value || ''}\n(${start}${end ? ' to ' + end : ''})`, fontSize: 9 },
-          { text: document.getElementById(`flSelCarrier_${id}`)?.value || 'Selected', fontSize: 9 },
-          { text: `$${parseFloat(document.getElementById(`flSelPrice_${id}`)?.value || 0).toFixed(2)}`, fontSize: 9 },
-          { text: notes, fontSize: 9 },
-          reasons.length > 0 ? { ul: reasons, fontSize: 8.5 } : { text: 'None selected', fontSize: 8.5, color: '#64748b' }
+          { text: `${fl.origin} -> ${fl.dest}\n(${fl.startDate}${fl.endDate ? ' to ' + fl.endDate : ''})`, fontSize: 8.5 },
+          { text: `${fl.selCarrier || 'Selected'}\n$${fl.selPrice.toFixed(2)}`, fontSize: 8.5 },
+          { text: compStatusStr, fontSize: 8.5 },
+          reimbCell,
+          detailItems.length > 0 ? { ul: detailItems, fontSize: 8.5 } : { text: '—', fontSize: 8.5, color: '#64748b' }
         ]);
       });
 
       const content = [
         { text: 'SPACE SCIENCE INSTITUTE', style: 'agencyHeader', alignment: 'center' },
         { text: 'Flight Comparison & Airfare Justification Sheet', style: 'header', alignment: 'center', margin: [0, 2, 0, 15] },
-        { table: { widths: ['22%', '18%', '11%', '21%', '28%'], body: tableBody }, margin: [0, 0, 0, 12] },
+        { table: { widths: ['20%', '17%', '22%', '14%', '27%'], body: tableBody }, margin: [0, 0, 0, 10] },
+        {
+          text: totals.airfareCapped
+            ? `Total Reimbursable Airfare: $${totals.airfareTotal.toFixed(2)} (Selected Flights Total: $${totals.rawAirfareTotal.toFixed(2)} — capped at lower comparable quote)`
+            : `Total Reimbursable Airfare: $${totals.airfareTotal.toFixed(2)}`,
+          bold: true,
+          fontSize: 10,
+          color: '#0f172a',
+          margin: [0, 0, 0, 12]
+        },
         { text: 'Evaluation Notice', style: 'sectionHeader' },
         { text: `These prices were evaluated on ${todayFormatted}.`, fontSize: 10, italics: true, color: '#334155', margin: [0, 0, 0, 12] }
       ];
@@ -2497,32 +2700,27 @@
       });
 
       // Parse Flights Chronologically
-      document.querySelectorAll('[id^="flightRow_"]').forEach(row => {
-        const id = row.id.split('_')[1];
-        const start = document.getElementById(`flStartDate_${id}`)?.value;
-        const end = document.getElementById(`flEndDate_${id}`)?.value;
-        const orig = document.getElementById(`flOrigin_${id}`)?.value || 'Origin';
-        const dest = document.getElementById(`flDest_${id}`)?.value || 'Destination';
-        const carrier = document.getElementById(`flSelCarrier_${id}`)?.value || '';
-        const flType = document.getElementById(`flType_${id}`)?.value || 'Round Trip';
-
-        if (flType === 'Round Trip') {
-          if (start) {
+      totals.flightDetails.forEach(fl => {
+        const orig = fl.origin || 'Origin';
+        const dest = fl.dest || 'Destination';
+        const carrier = fl.selCarrier || '';
+        if (fl.type === 'Round Trip') {
+          if (fl.startDate) {
             timelineEvents.push({
-              date: start,
+              date: fl.startDate,
               desc: `Outbound Flight: ${orig} -> ${dest}${carrier ? ' (' + carrier + ')' : ''}`
             });
           }
-          if (end) {
+          if (fl.endDate) {
             timelineEvents.push({
-              date: end,
+              date: fl.endDate,
               desc: `Return Flight: ${dest} -> ${orig}${carrier ? ' (' + carrier + ')' : ''}`
             });
           }
         } else {
-          if (start) {
+          if (fl.startDate) {
             timelineEvents.push({
-              date: start,
+              date: fl.startDate,
               desc: `One-Way Flight: ${orig} -> ${dest}${carrier ? ' (' + carrier + ')' : ''}`
             });
           }
@@ -2638,7 +2836,7 @@
         const bizLegs = totals.legs.filter(l => l.type === 'Business');
         const gsaRateStr = bizLegs.map(l => `${l.city}, ${l.state}: $${l.lodgingRate}/night`).join('; ') || 'N/A';
         hotelCalcBlocks.push({
-          text: `Lodging calculated via GSA Lodging Per Diem across business nights (${gsaRateStr}) = $${totals.lodgingTotal.toFixed(2)}.`,
+          text: `Lodging calculated via GSA Lodging Per Diem across business nights (${gsaRateStr}) = $${totals.rawLodgingTotal.toFixed(2)}.`,
           fontSize: 9.5,
           margin: [0, 2, 0, 8],
           color: '#334155'
@@ -2679,6 +2877,23 @@
       if (isFamilyOrShared) {
         const singleConfirmed = document.getElementById('htSingleOccConfirmed')?.checked;
         const singleComment = document.getElementById('htSingleOccComment')?.value?.trim();
+        const htComp = totals.hotelCompInfo;
+
+        let compModeLabel = 'Not available (reimburse full amount)';
+        if (htComp.compMode === 'higher_or_equiv') {
+          compModeLabel = 'Higher or equivalent (reimburse full amount)';
+        } else if (htComp.compMode === 'less') {
+          const amtStr = htComp.compVal !== null ? `$${htComp.compVal.toFixed(2)}` : 'N/A';
+          compModeLabel = `Less (reimburse comp amount): ${amtStr}`;
+        }
+
+        const singleOccItems = [
+          `Confirmed that multiple occupancy is same cost as single occupancy: ${singleConfirmed ? 'Yes' : 'Not checked'}`,
+          `Comp price is: ${compModeLabel}`,
+          ...(htComp.isCapped ? [`Reimbursable Lodging Total (capped at lower single-occupancy comp): $${totals.lodgingTotal.toFixed(2)} (vs. $${totals.rawLodgingTotal.toFixed(2)} calculated/booked)`] : []),
+          ...(singleComment ? [`Comment: ${singleComment}`] : [])
+        ];
+
         hotelCalcBlocks.push({
           text: 'Single-Occupancy Comparison:',
           bold: true,
@@ -2687,10 +2902,7 @@
           color: '#1e1b4b'
         });
         hotelCalcBlocks.push({
-          ul: [
-            `Confirmed that multiple occupancy is same cost as single occupancy: ${singleConfirmed ? 'Yes' : 'Not checked'}`,
-            ...(singleComment ? [`Comment: ${singleComment}`] : [])
-          ],
+          ul: singleOccItems,
           fontSize: 9.5,
           margin: [0, 0, 0, 6]
         });
@@ -2746,6 +2958,14 @@
       if (document.getElementById('adjAltLocation')?.checked) adjItems.push(`Non-Home Departure/Arrival: ${document.getElementById('adjAltLocationNotes').value || 'Yes'}`);
       if (document.getElementById('adjOther')?.checked) adjItems.push(`Other non-standard situation: ${document.getElementById('adjOtherNotes').value || 'Yes'}`);
 
+      const lodgingSummaryLabel = totals.lodgingCapped
+        ? `Lodging Total (capped at lower single-occupancy comp; booked $${totals.rawLodgingTotal.toFixed(2)})`
+        : 'Lodging Total';
+
+      const airfareSummaryLabel = totals.airfareCapped
+        ? `Airfare Total (capped at lower flight comp; booked $${totals.rawAirfareTotal.toFixed(2)})`
+        : 'Airfare Total';
+
       return {
         content: [
           { text: 'SPACE SCIENCE INSTITUTE', style: 'header', alignment: 'center' },
@@ -2788,8 +3008,8 @@
               widths: ['65%', '35%'],
               body: [
                 ['Meals Total (Business Days, Net of Provided Meals)', { text: `$${totals.mealTotal.toFixed(2)}`, alignment: 'right' }],
-                ['Lodging Total', { text: `$${totals.lodgingTotal.toFixed(2)}`, alignment: 'right' }],
-                ['Airfare Total', { text: `$${totals.airfareTotal.toFixed(2)}`, alignment: 'right' }],
+                [lodgingSummaryLabel, { text: `$${totals.lodgingTotal.toFixed(2)}`, alignment: 'right' }],
+                [airfareSummaryLabel, { text: `$${totals.airfareTotal.toFixed(2)}`, alignment: 'right' }],
                 ['Meeting Registration Fee', { text: `$${totals.regFee.toFixed(2)}`, alignment: 'right' }],
                 [`Other / Additional Conference Fees${totals.addFeeDesc ? ' (' + totals.addFeeDesc + ')' : ''}`, { text: `$${totals.addFee.toFixed(2)}`, alignment: 'right' }],
                 ['Personal Car Mileage Total', { text: `$${totals.mileageTotal.toFixed(2)}`, alignment: 'right' }],
@@ -2860,10 +3080,10 @@
         await appendPdfMake(getItineraryDocDefinition());
         await appendPdfMake(getGSADocDefinition());
 
-        // Append Flight Summary if flight rows, comp reasons, or screenshots exist
+        // Append Flight Summary if flight rows, comp activity, or screenshots exist
         const hasFlights = document.querySelectorAll('[id^="flightRow_"]').length > 0 ||
                            flightCompScreenshots.length > 0 ||
-                           hasAnyFlightCompReason();
+                           hasAnyFlightCompActivity();
         if (hasFlights) {
           await appendPdfMake(getFlightCompDocDefinition());
         }
