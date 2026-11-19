@@ -24,6 +24,12 @@
       background-color: #f0fdf4 !important; /* Soft green */
       border-color: #86efac !important;
     }
+    .field-locked {
+      background-color: #f1f5f9 !important; /* Slate tint for read-only synced fields */
+      border-color: #cbd5e1 !important;
+      color: #334155 !important;
+      cursor: not-allowed;
+    }
     .field-invalid {
       background-color: #fef2f2 !important; /* Soft red for date errors */
       border-color: #f87171 !important;
@@ -89,7 +95,7 @@
         <div class="flex justify-between items-center mb-3">
           <div>
             <h2 class="text-md font-semibold text-slate-800">2. Trip Legs &amp; Destination Itinerary</h2>
-            <p class="text-xs text-slate-500">Add consecutive trip legs with specific leg purposes. Per diem is calculated for Business legs as (N - 0.5) &times; daily rate minus provided meals.</p>
+            <p class="text-xs text-slate-500">Add consecutive trip legs with specific leg purposes. Rates start at $0—enter City, State, and Dates or click <strong>Fetch GSA Rates</strong>. Per diem is calculated for Business legs as (N - 0.5) &times; daily rate minus provided meals.</p>
           </div>
           <button type="button" onclick="addLegRow()" class="px-3 py-1 bg-emerald-600 hover:bg-emerald-700 text-white rounded text-xs font-semibold shadow">
             ➕ Add Trip Leg
@@ -196,7 +202,7 @@
         <div class="flex justify-between items-center">
           <div>
             <h2 class="text-md font-semibold text-slate-800">5. Hotel Stays &amp; Accommodations</h2>
-            <p class="text-xs text-slate-500">Track hotel locations and calculation method (Nightly rate, GSA Per Diem, or Already Reserved).</p>
+            <p class="text-xs text-slate-500">Track hotel locations and calculation method (Nightly Rate, GSA Per Diem Rate synced from your Trip Legs, or Already Reserved).</p>
           </div>
           <button type="button" onclick="addHotelRow()" class="px-3 py-1 bg-amber-600 hover:bg-amber-700 text-white rounded text-xs font-semibold shadow">
             ➕ Add Hotel Stay
@@ -506,6 +512,7 @@
     let mileageCounter = 0;
     let costCenterCounter = 0;
     const legFetchTimers = {};
+    const legFetchSeq = {};
 
     // Store covered meals by ISO date string: { 'YYYY-MM-DD': { breakfast: bool, lunch: bool, dinner: bool } }
     let coveredMealsByDate = {};
@@ -537,7 +544,6 @@
     }
 
     // --- Standard GSA M&IE Breakdown Helper ---
-    // Official GSA CONUS M&IE tiers + standard GSA proportional allocation (15% B / 25% L / 40% D / 20% Inc)
     function getGSAMealBreakdown(dailyRate) {
       const rate = parseFloat(dailyRate) || 0;
       const gsaTiers = {
@@ -583,6 +589,12 @@
     function updateFieldHighlights() {
       const inputs = document.querySelectorAll('.chk-input');
       inputs.forEach(input => {
+        if (input.readOnly) {
+          input.classList.remove('field-empty', 'field-filled');
+          input.classList.add('field-locked');
+          return;
+        }
+        input.classList.remove('field-locked');
         if (!input.value || input.value.trim() === '') {
           input.classList.add('field-empty');
           input.classList.remove('field-filled');
@@ -803,7 +815,7 @@
         const type = document.getElementById(`legType_${id}`)?.value;
         const city = document.getElementById(`legCity_${id}`)?.value?.trim();
         const state = document.getElementById(`legState_${id}`)?.value?.trim();
-        if (type === 'Business' && city && state && state.length === 2) {
+        if (type === 'Business' && city && city.length >= 2 && state && state.length === 2) {
           fetchGSARatesForLeg(id, true);
         }
       }, 650);
@@ -814,9 +826,9 @@
       const id = legCounter;
       const container = document.getElementById('legsContainer');
 
-      // Standard FY 2027 CONUS fallback ($68 M&IE, $113 Lodging) until GSA location is fetched
-      const defaultMeal = data.mealRate !== undefined ? data.mealRate : 68;
-      const defaultLodging = data.lodgingRate !== undefined ? data.lodgingRate : 113;
+      // Default rates start at 0 so user does not mistake placeholder defaults for fetched GSA rates
+      const defaultMeal = data.mealRate !== undefined ? data.mealRate : 0;
+      const defaultLodging = data.lodgingRate !== undefined ? data.lodgingRate : 0;
 
       const html = `
         <div id="legRow_${id}" class="p-3 bg-white border border-slate-200 rounded-lg shadow-sm space-y-2 relative">
@@ -896,8 +908,7 @@
       } else {
         mealInput.disabled = false;
         lodgingInput.disabled = false;
-        if (parseFloat(mealInput.value) === 0) mealInput.value = 68;
-        if (parseFloat(lodgingInput.value) === 0) lodgingInput.value = 113;
+        scheduleAutoGSAFetch(id);
       }
       calculateTotals();
     }
@@ -1193,7 +1204,6 @@
       window.open(url, '_blank');
     }
 
-    // Helper to collect checked comp reasons for a given flight row
     function getFlightCompReasonsForRow(id) {
       const reasons = [];
       if (document.getElementById(`flCompReasonPersonalLeg_${id}`)?.checked) {
@@ -1225,7 +1235,7 @@
       return found;
     }
 
-    // --- Dynamic Hotels with Lodging Calculation Method Switch ---
+    // --- Dynamic Hotels with GSA Per Diem Sync ---
     function addHotelRow(data = {}) {
       hotelCounter++;
       const id = hotelCounter;
@@ -1235,7 +1245,7 @@
 
       const html = `
         <div id="hotelRow_${id}" class="p-3 bg-white border border-slate-200 rounded-lg shadow-sm space-y-2 relative">
-          <div class="flex justify-between items-center border-b pb-1">
+          <div class="flex justify-between items-center border-b pb-1 flex-wrap gap-2">
             <div class="flex items-center gap-2">
               <span class="text-xs font-bold text-amber-900">Hotel Stay #${id}</span>
               <select id="htCalcType_${id}" onchange="toggleHotelCalcType(${id}); calculateTotals();" class="chk-input text-[11px] font-semibold border rounded p-0.5 bg-slate-50">
@@ -1243,6 +1253,7 @@
                 <option value="Per Diem Rate" ${calcType === 'Per Diem Rate' ? 'selected' : ''}>GSA Per Diem Rate</option>
                 <option value="Already Reserved" ${calcType === 'Already Reserved' ? 'selected' : ''}>Already Reserved / Prepaid</option>
               </select>
+              <span id="htRowSubtotalBadge_${id}" class="text-[11px] font-bold text-slate-600">Subtotal: $0.00</span>
             </div>
             ${container.children.length > 0 ? `<button type="button" onclick="removeHotelRow(${id})" class="text-red-600 hover:text-red-800 text-xs font-bold">✕ Remove</button>` : ''}
           </div>
@@ -1280,6 +1291,7 @@
               <input type="text" id="htNotes_${id}" value="${data.notes || ''}" placeholder="Conference Rate" class="chk-input w-full border rounded p-1.5" />
             </div>
           </div>
+          <div id="htGsaSyncStatus_${id}" class="hidden text-[11px] font-medium text-indigo-800 bg-indigo-50/70 border border-indigo-200 rounded px-2 py-1"></div>
         </div>
       `;
 
@@ -1298,21 +1310,29 @@
       const rateLabel = document.getElementById(`htRateLabel_${id}`);
       const rateInput = document.getElementById(`htRate_${id}`);
       const reservedCol = document.getElementById(`htReservedCol_${id}`);
+      const syncStatus = document.getElementById(`htGsaSyncStatus_${id}`);
 
       if (type === 'Already Reserved') {
         rateCol.classList.add('hidden');
         reservedCol.classList.remove('hidden');
+        syncStatus?.classList.add('hidden');
+        if (rateInput) rateInput.readOnly = false;
       } else {
         reservedCol.classList.add('hidden');
         rateCol.classList.remove('hidden');
         if (type === 'Per Diem Rate') {
-          rateLabel.innerText = 'GSA Per Diem Rate ($)';
-          rateInput.placeholder = 'GSA Rate';
+          rateLabel.innerText = 'GSA Per Diem Rate ($/night)';
+          rateInput.placeholder = 'Synced from Leg';
+          rateInput.readOnly = true;
+          syncStatus?.classList.remove('hidden');
         } else {
           rateLabel.innerText = 'Nightly Rate ($)';
           rateInput.placeholder = '279.00';
+          rateInput.readOnly = false;
+          syncStatus?.classList.add('hidden');
         }
       }
+      updateFieldHighlights();
     }
 
     function removeHotelRow(id) {
@@ -1557,6 +1577,110 @@
       };
     }
 
+    // --- Helper to resolve GSA Per Diem Lodging Rate for a Hotel Stay from Business Trip Legs ---
+    function resolveHotelGSALodging(startVal, endVal, nights, allLegs) {
+      // Collect all Business legs (including ones whose dates may not be set yet)
+      const bizLegEntries = [];
+      document.querySelectorAll('[id^="legRow_"]').forEach(row => {
+        const lid = row.id.split('_')[1];
+        const lType = document.getElementById(`legType_${lid}`)?.value;
+        if (lType !== 'Business') return;
+        const lStartStr = document.getElementById(`legStart_${lid}`)?.value || '';
+        const lEndStr = document.getElementById(`legEnd_${lid}`)?.value || '';
+        const lCity = document.getElementById(`legCity_${lid}`)?.value?.trim() || `Leg #${lid}`;
+        const lState = document.getElementById(`legState_${lid}`)?.value?.trim().toUpperCase() || '';
+        const lRate = parseFloat(document.getElementById(`legLodgingRate_${lid}`)?.value) || 0;
+        bizLegEntries.push({
+          id: lid,
+          start: parseISODateLocal(lStartStr),
+          end: parseISODateLocal(lEndStr),
+          city: lCity,
+          state: lState,
+          lodgingRate: lRate
+        });
+      });
+
+      if (bizLegEntries.length === 0) {
+        return {
+          displayRate: 0,
+          totalCost: 0,
+          rateBreakdownStr: '0 night(s) x $0.00/night (GSA Per Diem Rate)',
+          statusHtml: '⚠️ No Business trip leg found. Add a Business leg and fetch GSA rates in Section 2.'
+        };
+      }
+
+      if (nights <= 0 || !startVal || !endVal) {
+        const firstBiz = bizLegEntries[0];
+        const locLabel = firstBiz.state ? `${firstBiz.city}, ${firstBiz.state}` : firstBiz.city;
+        return {
+          displayRate: firstBiz.lodgingRate,
+          totalCost: 0,
+          rateBreakdownStr: `0 night(s) x $${firstBiz.lodgingRate.toFixed(2)}/night (GSA Per Diem Rate)`,
+          statusHtml: firstBiz.lodgingRate > 0
+            ? `🔒 Fixed to Business Leg #${firstBiz.id} (${locLabel}) GSA rate: <strong>$${firstBiz.lodgingRate.toFixed(2)}/night</strong> — enter Check-In &amp; Check-Out dates to calculate total.`
+            : `⚠️ Business Leg #${firstBiz.id} (${locLabel}) GSA lodging rate is currently <strong>$0</strong> — click <strong>Fetch GSA Rates</strong> in Section 2.`
+        };
+      }
+
+      const checkIn = parseISODateLocal(startVal);
+      const datedBizLegs = bizLegEntries.filter(l => l.start && l.end);
+      const segments = []; // [{ legId, locLabel, rate, nights }]
+      let totalCost = 0;
+
+      for (let n = 0; n < nights; n++) {
+        const nightDate = new Date(checkIn.getFullYear(), checkIn.getMonth(), checkIn.getDate() + n);
+        let matchedLeg = datedBizLegs.find(l => nightDate >= l.start && nightDate <= l.end);
+        if (!matchedLeg && datedBizLegs.length > 0) {
+          // Closest dated business leg if check-in/out extends slightly beyond leg dates
+          matchedLeg = datedBizLegs.reduce((best, curr) => {
+            const bestDist = Math.min(Math.abs(nightDate - best.start), Math.abs(nightDate - best.end));
+            const currDist = Math.min(Math.abs(nightDate - curr.start), Math.abs(nightDate - curr.end));
+            return currDist < bestDist ? curr : best;
+          }, datedBizLegs[0]);
+        }
+        if (!matchedLeg) {
+          matchedLeg = bizLegEntries[0];
+        }
+
+        const locLabel = matchedLeg.state ? `${matchedLeg.city}, ${matchedLeg.state}` : matchedLeg.city;
+        const rate = matchedLeg.lodgingRate;
+        totalCost += rate;
+
+        const lastSeg = segments[segments.length - 1];
+        if (lastSeg && lastSeg.legId === matchedLeg.id && lastSeg.rate === rate) {
+          lastSeg.nights += 1;
+        } else {
+          segments.push({ legId: matchedLeg.id, locLabel, rate, nights: 1 });
+        }
+      }
+
+      const avgRate = Math.round((totalCost / nights) * 100) / 100;
+      const hasZeroRate = segments.some(s => s.rate === 0);
+
+      let rateBreakdownStr = '';
+      let statusHtml = '';
+      if (segments.length === 1) {
+        const seg = segments[0];
+        rateBreakdownStr = `${nights} night(s) x $${seg.rate.toFixed(2)}/night (GSA Per Diem Rate — ${seg.locLabel})`;
+        statusHtml = seg.rate > 0
+          ? `🔒 Fixed to Business Leg #${seg.legId} (${seg.locLabel}) GSA rate: <strong>$${seg.rate.toFixed(2)}/night</strong> &times; ${nights} night(s) = <strong>$${totalCost.toFixed(2)}</strong>`
+          : `⚠️ Business Leg #${seg.legId} (${seg.locLabel}) GSA lodging rate is currently <strong>$0</strong> — click <strong>Fetch GSA Rates</strong> in Section 2.`;
+      } else {
+        const segSummary = segments.map(s => `${s.nights} night(s) @ $${s.rate.toFixed(2)} (${s.locLabel})`).join(' + ');
+        rateBreakdownStr = `${segSummary} (GSA Per Diem Rate)`;
+        statusHtml = hasZeroRate
+          ? `⚠️ One or more matched Business legs still have a $0 GSA rate (${segSummary}) — click <strong>Fetch GSA Rates</strong> in Section 2.`
+          : `🔒 Fixed to multi-leg GSA rates: <strong>${segSummary}</strong> = <strong>$${totalCost.toFixed(2)}</strong>`;
+      }
+
+      return {
+        displayRate: avgRate,
+        totalCost,
+        rateBreakdownStr,
+        statusHtml
+      };
+    }
+
     // --- Calculation & Date Validation Engine ---
     function calculateTotals() {
       const banner = document.getElementById('dateValidationBanner');
@@ -1755,8 +1879,9 @@
         });
       });
 
-      // Hotel Stays calculation
+      // Hotel Stays calculation (with live GSA Per Diem Rate sync when "Per Diem Rate" is selected)
       let hotelTotalFromRows = 0;
+      let hasPerDiemHotelRow = false;
       let hotelDetails = [];
       document.querySelectorAll('[id^="hotelRow_"]').forEach(row => {
         const id = row.id.split('_')[1];
@@ -1776,15 +1901,40 @@
 
         let rowCost = 0;
         let rate = 0;
+        let rateBreakdownStr = '';
+
         if (calcType === 'Already Reserved') {
           rowCost = parseFloat(document.getElementById(`htReservedAmt_${id}`)?.value) || 0;
+          rateBreakdownStr = `Already Reserved / Prepaid lump sum ($${rowCost.toFixed(2)})`;
+        } else if (calcType === 'Per Diem Rate') {
+          hasPerDiemHotelRow = true;
+          const synced = resolveHotelGSALodging(startVal, endVal, nights, allLegs);
+          rate = synced.displayRate;
+          rowCost = synced.totalCost;
+          rateBreakdownStr = synced.rateBreakdownStr;
+
+          const rateInput = document.getElementById(`htRate_${id}`);
+          if (rateInput) rateInput.value = rate;
+
+          const syncStatusEl = document.getElementById(`htGsaSyncStatus_${id}`);
+          if (syncStatusEl) {
+            syncStatusEl.innerHTML = synced.statusHtml;
+            syncStatusEl.classList.remove('hidden');
+          }
         } else {
           rate = parseFloat(document.getElementById(`htRate_${id}`)?.value) || 0;
           rowCost = rate * nights;
+          rateBreakdownStr = `${nights} night(s) x $${rate.toFixed(2)}/night (${calcType})`;
         }
+
+        const subBadge = document.getElementById(`htRowSubtotalBadge_${id}`);
+        if (subBadge) {
+          subBadge.innerText = nights > 0 ? `Subtotal: $${rowCost.toFixed(2)} (${nights} night${nights === 1 ? '' : 's'})` : `Subtotal: $${rowCost.toFixed(2)}`;
+        }
+
         hotelTotalFromRows += rowCost;
         hotelDetails.push({
-          id, calcType, name: hName, website, start: startVal, end: endVal, nights, rate, cost: rowCost, notes
+          id, calcType, name: hName, website, start: startVal, end: endVal, nights, rate, cost: rowCost, notes, rateBreakdownStr
         });
       });
 
@@ -1807,7 +1957,7 @@
           totalDays: 0, bizDays: 0, mealTotal: 0, baseMealTotal: 0, mealDeductionTotal: 0,
           rawLodgingTotal: hotelTotalFromRows, lodgingTotal: effectiveLodgingTotal,
           lodgingCapped: htComp.isCapped, hotelCompInfo: htComp,
-          lodgingPerDiemTotal: 0, usedHotelRows: hotelTotalFromRows > 0,
+          lodgingPerDiemTotal: 0, usedHotelRows: hotelTotalFromRows > 0 || hasPerDiemHotelRow,
           rawAirfareTotal, airfareTotal, airfareCapped, flightDetails,
           mileageTotal: personalMileageTotal, transitTotal: transitTaxiTotal,
           regFee: totalConfRegFee, addFee: totalConfAddFee, addFeeDesc: confAddFeeDescriptions.join(', '),
@@ -1919,7 +2069,7 @@
       mealTotal = Math.round(mealTotal * 100) / 100;
       renderMealsMatrix(dailySchedule);
 
-      const usedHotelRows = hotelTotalFromRows > 0;
+      const usedHotelRows = hotelTotalFromRows > 0 || hasPerDiemHotelRow;
       const rawLodgingTotal = usedHotelRows ? hotelTotalFromRows : lodgingPerDiemTotal;
       const htComp = evaluateHotelSingleOccComp(rawLodgingTotal);
       const effectiveLodgingTotal = htComp.effectiveLodgingTotal;
@@ -1985,6 +2135,9 @@
         return;
       }
 
+      const seq = (legFetchSeq[id] || 0) + 1;
+      legFetchSeq[id] = seq;
+
       const fy = getFiscalYearForDate(startDateVal);
       const refDate = startDateVal ? parseISODateLocal(startDateVal) : new Date();
       const monthIndex = refDate.getMonth(); // 0-11
@@ -2000,9 +2153,12 @@
         let response = await fetch(`https://api.gsa.gov/travel/perdiem/v2/rates/city/${encodeURIComponent(city)}/state/${state}/year/${fy}?api_key=DEMO_KEY`);
         let data = response.ok ? await response.json() : null;
 
+        if (legFetchSeq[id] !== seq) return;
+
         if (!data || !data.rates || data.rates.length === 0) {
           response = await fetch(`https://api.gsa.gov/travel/perdiem/v2/rates/state/${state}/year/${fy}?api_key=DEMO_KEY`);
           data = response.ok ? await response.json() : null;
+          if (legFetchSeq[id] !== seq) return;
         }
 
         if (data && data.rates && data.rates.length > 0) {
@@ -2023,7 +2179,6 @@
               document.getElementById(`legMealRate_${id}`).value = fetchedMeals;
             }
 
-            // GSA API stores monthly lodging in rateObj.months.month with keys: { number: 1..12, short: "Nov", long: "November", value: 279 }
             const monthList = Array.isArray(rateObj.months?.month)
               ? rateObj.months.month
               : (Array.isArray(rateObj.months) ? rateObj.months : []);
@@ -2048,9 +2203,10 @@
           updateFieldHighlights();
           calculateTotals();
         } else {
-          statusEl.innerText = `⚠️ No specific GSA entry found for ${city}, ${state} (FY ${fy}). Standard rates retained.`;
+          statusEl.innerText = `⚠️ No specific GSA entry found for ${city}, ${state} (FY ${fy}). Rates remain $0—verify manually.`;
         }
       } catch (err) {
+        if (legFetchSeq[id] !== seq) return;
         statusEl.innerText = `⚠️ Could not reach GSA API (${err.message}). Verify FY ${fy} rates manually.`;
       }
     }
@@ -2329,7 +2485,6 @@
 
     // --- Build Brief Summary Text for Special Funding Approval Justifications ---
     function getSpecialFundingSummaries(totals) {
-      // 1. Over Per Diem / Prearranged Lodging summary
       const overParts = [];
       const addOverPart = (cbId, noteId, label) => {
         if (document.getElementById(cbId)?.checked) {
@@ -2346,7 +2501,6 @@
         ? `See attached — ${overParts.join('; ')}`
         : 'See attached';
 
-      // 2. Non-Standard Situations summary
       const nonStdParts = [];
       const addAdjPart = (cbId, noteId, label) => {
         if (document.getElementById(cbId)?.checked) {
@@ -2367,7 +2521,6 @@
         ? `See attached — ${nonStdParts.join('; ')}`
         : 'See attached';
 
-      // 3. Comparable Lodging / Airfare summary
       const compParts = [];
       const flightReasonsAll = [];
       totals.flightDetails.forEach(fl => {
@@ -2461,14 +2614,14 @@
       setField('DATES#0', `${totals.overallStart} - ${totals.overallEnd}`);
       setField('Total#0', totals.mealTotal.toFixed(2));
 
-      // Lodging Per Diem & Rate column fill (uses reimbursable lodgingTotal)
+      // Lodging Per Diem & Rate column fill
       const lodgingRateVal = bizLegs[0]?.lodgingRate ? `$${bizLegs[0].lodgingRate}/night (Biz Legs)` : '';
       setField('undefined', lodgingRateVal);
       setField('LODGING Per Diem', lodgingRateVal);
       setField('DATES#1', `${totals.overallStart} - ${totals.overallEnd}`);
       setField('Total#1', totals.lodgingTotal.toFixed(2));
 
-      // Airfare (uses reimbursable airfareTotal, capped at lower comp if applicable)
+      // Airfare
       setField('DATES#2', totals.overallStart);
       setField('Total#2', totals.airfareTotal.toFixed(2));
 
@@ -2494,7 +2647,7 @@
         setField('Total#9', totals.addFee.toFixed(2));
       }
 
-      // Personal Car Mileage: format e.g. "86 mi @ $0.72/mi"
+      // Personal Car Mileage
       const personalTrips = totals.groundTripDetails.filter(t => t.mode === 'personal');
       if (totals.mileageTotal > 0 || personalTrips.length > 0) {
         const rateSet = new Set(personalTrips.map(t => t.truncRate.toFixed(2)));
@@ -2550,13 +2703,12 @@
         checkBoxSafe('Comparables');
       }
 
-      // --- Populate "See attached — [brief summary]" in the JUSTIFICATION column for every checked box under Special Funding Approvals ---
+      // Populate "See attached — [brief summary]" in the JUSTIFICATION column for every checked box under Special Funding Approvals
       try {
         const page1Ref = pdfDoc.getPages()[0].ref;
         const allFields = form.getFields();
         const summaries = getSpecialFundingSummaries(totals);
 
-        // Collect all TextFields on Page 1 located in the Special Funding Approvals JUSTIFICATION column
         const justificationFields = [];
         const specialCheckboxes = [];
 
@@ -2568,7 +2720,6 @@
           if (pRef && pRef !== page1Ref) return;
           const rect = w.getRectangle();
 
-          // Special Funding Approvals section sits below y ~ 470 and above y ~ 75 on Page 1
           if (rect.y >= 75 && rect.y <= 470) {
             if (f instanceof lib.PDFTextField && rect.x >= 170 && rect.x <= 465) {
               justificationFields.push({ field: f, name: f.getName(), rect });
@@ -2578,7 +2729,6 @@
           }
         });
 
-        // Map each checked checkbox in Special Funding Approvals to its matching Justification text field by vertical position
         const assignedTextByFieldName = new Map();
 
         specialCheckboxes.forEach(cbInfo => {
@@ -2588,7 +2738,6 @@
 
           const cbCenterY = cbInfo.rect.y + cbInfo.rect.height / 2;
 
-          // Find justification text field whose vertical band contains cbCenterY (or nearest vertically)
           let targetTf = justificationFields.find(tf =>
             cbCenterY >= (tf.rect.y - 4) && cbCenterY <= (tf.rect.y + tf.rect.height + 4)
           );
@@ -2612,7 +2761,6 @@
             summaryForBox = summaries.comparablesText;
           }
 
-          // Avoid duplicating identical text if multiple checkboxes share the same Justification row (e.g. Over Per Diem + Prearranged)
           if (!assignedTextByFieldName.has(targetTf.name)) {
             assignedTextByFieldName.set(targetTf.name, { tfInfo: targetTf, text: summaryForBox });
           } else {
@@ -3022,16 +3170,18 @@
           [{ text: 'Hotel & Dates', bold: true }, { text: 'Method', bold: true }, { text: 'Calculation', bold: true }, { text: 'Subtotal', bold: true }]
         ];
         totals.hotelDetails.forEach(h => {
-          let calcStr = '';
-          if (h.calcType === 'Already Reserved') {
-            calcStr = `Already Reserved / Prepaid lump sum ($${h.cost.toFixed(2)})`;
-          } else {
-            calcStr = `${h.nights} night(s) x $${h.rate.toFixed(2)}/night (${h.calcType})`;
+          let calcStr = h.rateBreakdownStr || '';
+          if (!calcStr) {
+            if (h.calcType === 'Already Reserved') {
+              calcStr = `Already Reserved / Prepaid lump sum ($${h.cost.toFixed(2)})`;
+            } else {
+              calcStr = `${h.nights} night(s) x $${h.rate.toFixed(2)}/night (${h.calcType})`;
+            }
           }
           if (h.notes) calcStr += `\nNotes: ${h.notes}`;
           hotelTable.push([
             { text: `${h.name}\n(${h.start || 'N/A'} to ${h.end || 'N/A'})`, fontSize: 9 },
-            { text: h.calcType, fontSize: 9 },
+            { text: h.calcType === 'Per Diem Rate' ? 'GSA Per Diem Rate' : h.calcType, fontSize: 9 },
             { text: calcStr, fontSize: 9 },
             { text: `$${h.cost.toFixed(2)}`, bold: true, fontSize: 9, alignment: 'right' }
           ]);
