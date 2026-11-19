@@ -141,6 +141,7 @@
           <div>Airfare: $<span id="calcAirfareTotal" class="font-bold text-slate-900">0.00</span></div>
           <div>Conf Reg: $<span id="calcConfRegTotal" class="font-bold text-slate-900">0.00</span></div>
           <div>Other/Add'l: $<span id="calcConfAddTotal" class="font-bold text-slate-900">0.00</span></div>
+          <div>Rental Car: $<span id="calcRentalCarTotal" class="font-bold text-slate-900">0.00</span></div>
           <div>Personal Mileage: $<span id="calcMileageTotal" class="font-bold text-slate-900">0.00</span></div>
           <div>Taxi/Transit: $<span id="calcTransitTotal" class="font-bold text-slate-900">0.00</span></div>
           <div>Grand Total: $<span id="calcGrandTotal" class="font-bold text-blue-700">0.00</span></div>
@@ -221,17 +222,27 @@
           <div>
             <h3 class="font-bold text-slate-800">Reasons for Going Over Per Diem</h3>
             <p class="text-amber-800 font-semibold mt-0.5">⚠️ Note that if even 1 night is over per diem, you must check the box for over per diem!</p>
-            <p class="text-[11px] text-slate-500">Checking any reason below automatically checks "Lodging Over Per Diem" on the TA form (and also checks "Lodging at Prearranged Place" if Conference Hotel is selected).</p>
+            <p class="text-[11px] text-slate-500">Checking any reason below automatically checks "Lodging Over Per Diem" on the TA form and checks the matching sub-box ("Lodging at Prearranged Place" for conference hotel, "Special Events Escalated Cost" for special events, or "Other" for safety/distance/high demand/other).</p>
           </div>
 
           <div class="space-y-2">
             <div class="grid grid-cols-1 md:grid-cols-12 gap-2 items-center bg-white p-2 rounded border">
               <div class="md:col-span-5 flex items-center gap-2">
                 <input type="checkbox" id="htOverConfHotel" class="rounded text-amber-600">
-                <label for="htOverConfHotel" class="font-semibold text-slate-700">conference hotel</label>
+                <label for="htOverConfHotel" class="font-semibold text-slate-700">conference hotel (lodging at prearranged place)</label>
               </div>
               <div class="md:col-span-7">
                 <input type="text" id="htOverConfHotelNotes" placeholder="Details (e.g. Official AGU block rate at Marriott)" class="chk-input w-full border rounded p-1 text-xs field-empty">
+              </div>
+            </div>
+
+            <div class="grid grid-cols-1 md:grid-cols-12 gap-2 items-center bg-white p-2 rounded border">
+              <div class="md:col-span-5 flex items-center gap-2">
+                <input type="checkbox" id="htOverSpecialEvents" class="rounded text-amber-600">
+                <label for="htOverSpecialEvents" class="font-semibold text-slate-700">special events escalated cost (e.g. local 5K, NFL game)</label>
+              </div>
+              <div class="md:col-span-7">
+                <input type="text" id="htOverSpecialEventsNotes" placeholder="Details on local special event escalating hotel rates" class="chk-input w-full border rounded p-1 text-xs field-empty">
               </div>
             </div>
 
@@ -334,12 +345,12 @@
         </div>
       </section>
 
-      <!-- 6. Ground Mileage & Transit -->
+      <!-- 6. Ground Mileage, Rental Car & Transit -->
       <section class="border p-4 rounded-lg bg-white border-slate-200">
         <div class="flex justify-between items-center mb-3">
           <div>
-            <h2 class="text-md font-semibold text-slate-800">6. Ground Transportation &amp; Mileage Trips</h2>
-            <p class="text-xs text-slate-500">Document personal car mileage (IRS rate truncated to 2 decimals) or taxi/rideshare/train/shuttle estimated costs with optional PDF route attachments.</p>
+            <h2 class="text-md font-semibold text-slate-800">6. Ground Transportation, Rental Car &amp; Mileage Trips</h2>
+            <p class="text-xs text-slate-500">Document personal car mileage (IRS rate truncated to 2 decimals), rental car estimated costs (automatically checks "Use of Rental Car" on TA), or taxi/rideshare/train/shuttle costs with optional PDF route attachments.</p>
           </div>
           <button type="button" onclick="addMileageRow()" class="px-3 py-1 bg-purple-600 hover:bg-purple-700 text-white rounded text-xs font-semibold shadow">
             ➕ Add Ground/Mileage Trip
@@ -349,12 +360,75 @@
         <div id="mileageContainer" class="space-y-3"></div>
       </section>
 
-      <!-- 7. Travel Adjustments Checklist -->
-      <section class="border p-4 rounded-lg bg-slate-50 border-slate-200">
-        <h2 class="text-md font-semibold text-slate-800 mb-1">7. Special Travel Adjustments &amp; Checklist</h2>
-        <p class="text-xs text-slate-500 mb-3">Check applicable non-standard situations and provide required policy notes.</p>
+      <!-- 7. Special Funding Approvals & Travel Adjustments Checklist -->
+      <section class="border p-4 rounded-lg bg-slate-50 border-slate-200 space-y-4">
+        <div>
+          <h2 class="text-md font-semibold text-slate-800">7. Special Funding Approvals &amp; Non-Standard Travel Checklist</h2>
+          <p class="text-xs text-slate-500">Check applicable TA Special Funding Approvals and non-standard situations. Checked boxes and wrapped justification notes automatically populate Page 1 of the TA form.</p>
+        </div>
 
+        <!-- Subsection 7A: Additional Special Funding Approvals (TA Page 1) -->
         <div class="space-y-2 text-xs">
+          <div class="text-[11px] font-bold uppercase tracking-wide text-slate-600">Special Funding Approvals (TA Page 1)</div>
+
+          <div class="grid grid-cols-1 md:grid-cols-12 gap-2 items-center bg-white p-2 rounded border">
+            <div class="md:col-span-5 flex items-center gap-2">
+              <input type="checkbox" id="sfUseOfOH" class="rounded text-indigo-600">
+              <label for="sfUseOfOH" class="font-semibold text-slate-700">Use of overhead funds</label>
+            </div>
+            <div class="md:col-span-7">
+              <input type="text" id="sfUseOfOHNotes" placeholder="Justification for use of overhead funds" class="chk-input w-full border rounded p-1 text-xs field-empty">
+            </div>
+          </div>
+
+          <div class="grid grid-cols-1 md:grid-cols-12 gap-2 items-center bg-white p-2 rounded border">
+            <div class="md:col-span-5 flex items-center gap-2">
+              <input type="checkbox" id="sfRentalCar" class="rounded text-indigo-600" onchange="onRentalCarCheckboxToggle()">
+              <label for="sfRentalCar" class="font-semibold text-slate-700">Use of rental car <span class="text-[10px] font-normal text-slate-400">(auto-checked if Rental Car added in Sec. 6)</span></label>
+            </div>
+            <div class="md:col-span-7">
+              <input type="text" id="sfRentalCarNotes" placeholder="Justification for rental car (e.g. No public transit to observatory/field site)" class="chk-input w-full border rounded p-1 text-xs field-empty">
+            </div>
+          </div>
+
+          <!-- International Travel + Domestic / Non-Domestic sub-checkboxes -->
+          <div class="bg-white p-2 rounded border space-y-2">
+            <div class="grid grid-cols-1 md:grid-cols-12 gap-2 items-center">
+              <div class="md:col-span-5 flex items-center gap-2">
+                <input type="checkbox" id="sfInternational" class="rounded text-indigo-600">
+                <label for="sfInternational" class="font-semibold text-slate-700">International travel</label>
+              </div>
+              <div class="md:col-span-7">
+                <input type="text" id="sfInternationalNotes" placeholder="Justification &amp; destination (note: 15 business days advance submission required)" class="chk-input w-full border rounded p-1 text-xs field-empty">
+              </div>
+            </div>
+            <div class="flex flex-wrap gap-6 pl-6 pt-1 border-t border-slate-100 text-xs">
+              <label class="flex items-center gap-2 cursor-pointer text-slate-700 font-medium">
+                <input type="checkbox" id="sfIntlDomestic" class="rounded text-indigo-600" onchange="if(this.checked) document.getElementById('sfInternational').checked = true;">
+                <span>Domestic air carriers</span>
+              </label>
+              <label class="flex items-center gap-2 cursor-pointer text-slate-700 font-medium">
+                <input type="checkbox" id="sfIntlNonDomestic" class="rounded text-indigo-600" onchange="if(this.checked) document.getElementById('sfInternational').checked = true;">
+                <span>Non-domestic air carriers</span>
+              </label>
+            </div>
+          </div>
+
+          <div class="grid grid-cols-1 md:grid-cols-12 gap-2 items-center bg-white p-2 rounded border">
+            <div class="md:col-span-5 flex items-center gap-2">
+              <input type="checkbox" id="sfComparables" class="rounded text-indigo-600">
+              <label for="sfComparables" class="font-semibold text-slate-700">Comparable lodging/airfare <span class="text-[10px] font-normal text-slate-400">(auto-checked when comps entered)</span></label>
+            </div>
+            <div class="md:col-span-7">
+              <input type="text" id="sfComparablesNotes" placeholder="Optional additional note for comparable lodging/airfare" class="chk-input w-full border rounded p-1 text-xs field-empty">
+            </div>
+          </div>
+        </div>
+
+        <!-- Subsection 7B: Non-Standard Situations -->
+        <div class="space-y-2 text-xs pt-1 border-t border-slate-200">
+          <div class="text-[11px] font-bold uppercase tracking-wide text-slate-600">Documentation of Other Non-Standard Situations Included/Attached</div>
+
           <div class="grid grid-cols-1 md:grid-cols-12 gap-2 items-center bg-white p-2 rounded border">
             <div class="md:col-span-5 flex items-center gap-2">
               <input type="checkbox" id="adjFamily" class="rounded text-indigo-600" onchange="updateSingleOccupancyVisibility()">
@@ -383,6 +457,16 @@
             </div>
             <div class="md:col-span-7">
               <input type="text" id="adjSharedRoomNoDiffNotes" value="See attached comparison in Travel Summary" placeholder="See attached comparison in Travel Summary" class="chk-input w-full border rounded p-1 text-xs field-filled">
+            </div>
+          </div>
+
+          <div class="grid grid-cols-1 md:grid-cols-12 gap-2 items-center bg-white p-2 rounded border">
+            <div class="md:col-span-5 flex items-center gap-2">
+              <input type="checkbox" id="adjTravelAgent" class="rounded text-indigo-600">
+              <label for="adjTravelAgent" class="font-semibold text-slate-700">Use of SSI travel agent</label>
+            </div>
+            <div class="md:col-span-7">
+              <input type="text" id="adjTravelAgentNotes" placeholder="Notes (e.g. Multi-leg itinerary booked through SSI travel agent)" class="chk-input w-full border rounded p-1 text-xs field-empty">
             </div>
           </div>
 
@@ -486,7 +570,7 @@
           ✈️ Download Flight Comparison PDF
         </button>
         <button type="button" onclick="generateMileagePDF()" class="px-4 py-2 bg-purple-600 hover:bg-purple-700 text-white font-medium rounded-md text-sm shadow">
-          🚗 Download Mileage Report PDF
+          🚗 Download Mileage / Ground Report PDF
         </button>
         <button type="button" onclick="generateItineraryPDF()" class="px-4 py-2 bg-slate-700 hover:bg-slate-800 text-white font-medium rounded-md text-sm shadow">
           🗓️ Download Itinerary Summary PDF
@@ -511,6 +595,7 @@
     let hotelCounter = 0;
     let mileageCounter = 0;
     let costCenterCounter = 0;
+    let rentalCarManualOverride = false;
     const legFetchTimers = {};
     const legFetchSeq = {};
 
@@ -636,6 +721,10 @@
         }
       }
       calculateTotals();
+    }
+
+    function onRentalCarCheckboxToggle() {
+      rentalCarManualOverride = true;
     }
 
     // --- Image Normalization & Clipboard Paste / Upload Handlers ---
@@ -1342,7 +1431,7 @@
       updateFieldHighlights();
     }
 
-    // --- Dynamic Ground Mileage & Transit Trips ---
+    // --- Dynamic Ground Mileage, Rental Car & Transit Trips ---
     function addMileageRow(data = {}) {
       mileageCounter++;
       const id = mileageCounter;
@@ -1353,6 +1442,7 @@
 
       const defaultRate = data.rate !== undefined ? truncateToTwoDecimals(data.rate) : 0.72;
       const isRoundtrip = data.roundtrip !== undefined ? !!data.roundtrip : true;
+      const rentalCalcMode = data.rentalCalcMode || 'total';
 
       const html = `
         <div id="mileageRow_${id}" class="p-3 bg-white border border-slate-200 rounded-lg shadow-sm space-y-2">
@@ -1361,14 +1451,19 @@
               <span class="text-xs font-bold text-purple-900">Ground Trip #${id}</span>
               <select id="mMode_${id}" onchange="toggleGroundMode(${id}); calculateTotals();" class="chk-input text-[11px] font-semibold border rounded p-0.5 bg-slate-50">
                 <option value="personal" ${mode === 'personal' ? 'selected' : ''}>🚗 Personal Car</option>
+                <option value="rental" ${mode === 'rental' ? 'selected' : ''}>🚙 Rental Car</option>
                 <option value="transit" ${mode === 'transit' ? 'selected' : ''}>🚆 Transit / Train</option>
                 <option value="taxi" ${mode === 'taxi' ? 'selected' : ''}>🚕 Taxi / Rideshare</option>
                 <option value="shuttle" ${mode === 'shuttle' ? 'selected' : ''}>🚐 Shuttle</option>
               </select>
-              <label class="inline-flex items-center gap-1 text-[11px] font-semibold text-purple-900 bg-purple-50 px-2 py-0.5 rounded border border-purple-200 cursor-pointer">
+              <label id="mRoundtripLabel_${id}" class="inline-flex items-center gap-1 text-[11px] font-semibold text-purple-900 bg-purple-50 px-2 py-0.5 rounded border border-purple-200 cursor-pointer">
                 <input type="checkbox" id="mRoundtrip_${id}" ${isRoundtrip ? 'checked' : ''} onchange="calculateTotals()" class="rounded text-purple-600">
                 <span>Roundtrip (2&times;)</span>
               </label>
+              <select id="mRentalCalcMode_${id}" onchange="toggleRentalCalcMode(${id}); calculateTotals();" class="hidden chk-input text-[11px] font-semibold border rounded p-0.5 bg-amber-50 text-amber-900 border-amber-200">
+                <option value="total" ${rentalCalcMode === 'total' ? 'selected' : ''}>Estimated Total Cost</option>
+                <option value="daily" ${rentalCalcMode === 'daily' ? 'selected' : ''}>Daily Rate &times; Days</option>
+              </select>
               <span id="mRowSubtotal_${id}" class="text-[11px] font-bold text-slate-600">Subtotal: $0.00</span>
             </div>
             <div class="flex items-center gap-2">
@@ -1381,15 +1476,15 @@
 
           <div class="grid grid-cols-1 md:grid-cols-5 gap-2 text-xs">
             <div>
-              <label class="block text-slate-500 mb-0.5">Date</label>
+              <label id="mDateLabel_${id}" class="block text-slate-500 mb-0.5">Date</label>
               <input type="date" id="mDate_${id}" value="${data.date || ''}" class="chk-input w-full border rounded p-1.5" onchange="calculateTotals()" />
             </div>
             <div>
-              <label class="block text-slate-500 mb-0.5">Origin</label>
+              <label id="mOriginLabel_${id}" class="block text-slate-500 mb-0.5">Origin</label>
               <input type="text" id="mOrigin_${id}" value="${data.origin || ''}" placeholder="Boulder, CO" class="chk-input w-full border rounded p-1.5" />
             </div>
             <div>
-              <label class="block text-slate-500 mb-0.5">Destination</label>
+              <label id="mDestLabel_${id}" class="block text-slate-500 mb-0.5">Destination</label>
               <input type="text" id="mDest_${id}" value="${data.dest || ''}" placeholder="DEN Airport" class="chk-input w-full border rounded p-1.5" />
             </div>
 
@@ -1403,20 +1498,30 @@
               <input type="number" id="mRate_${id}" value="${defaultRate}" step="0.01" class="chk-input w-full border rounded p-1.5" onchange="enforceTruncatedRate(${id})" oninput="calculateTotals()" />
             </div>
 
-            <!-- Taxi / Rideshare / Train / Shuttle Fields -->
+            <!-- Rental Car Daily Rate x Days Fields (optional alternative mode) -->
+            <div id="mRentalDailyCol_${id}" class="hidden">
+              <label class="block text-slate-500 mb-0.5">Days &times; Daily Rate ($)</label>
+              <div class="flex items-center gap-1">
+                <input type="number" id="mRentalDays_${id}" value="${data.rentalDays || ''}" placeholder="Days" step="1" min="1" class="chk-input w-1/2 border rounded p-1.5" oninput="calculateTotals()" />
+                <span class="text-slate-400 font-bold">&times;</span>
+                <input type="number" id="mRentalDailyRate_${id}" value="${data.rentalDailyRate || ''}" placeholder="$/day" step="0.01" class="chk-input w-1/2 border rounded p-1.5" oninput="calculateTotals()" />
+              </div>
+            </div>
+
+            <!-- Rental Car / Taxi / Rideshare / Train / Shuttle Estimated Cost -->
             <div id="mEstCostCol_${id}" class="hidden">
               <label id="mEstCostLabel_${id}" class="block text-slate-500 mb-0.5">Estimated Cost ($)</label>
               <input type="number" id="mEstCost_${id}" value="${data.estCost || ''}" placeholder="45.00" step="0.01" class="chk-input w-full border rounded p-1.5" oninput="calculateTotals()" />
             </div>
             <div id="mTransitNotesCol_${id}" class="hidden">
-              <label class="block text-slate-500 mb-0.5">Transit / Provider Notes</label>
-              <input type="text" id="mTransitNotes_${id}" value="${data.notes || ''}" placeholder="e.g. RTD SkyRide / Uber" class="chk-input w-full border rounded p-1.5" />
+              <label id="mTransitNotesLabel_${id}" class="block text-slate-500 mb-0.5">Transit / Provider Notes</label>
+              <input type="text" id="mTransitNotes_${id}" value="${data.notes || ''}" placeholder="e.g. RTD SkyRide / Uber" class="chk-input w-full border rounded p-1.5" oninput="calculateTotals()" />
             </div>
           </div>
 
           <div class="p-2 bg-purple-50/50 border border-purple-200 rounded text-xs flex justify-between items-center">
             <div>
-              <span class="font-bold text-purple-900">📄 Upload Ground Route / Map PDF Attachment</span>
+              <span class="font-bold text-purple-900">📄 Upload Ground Route / Quote PDF Attachment</span>
               <p class="text-[10px] text-slate-500">Appended to the complete collated PDF package.</p>
             </div>
             <input type="file" accept="application/pdf" onchange="handleSectionPdfUpload(event, ${id}, 'mileage')" class="text-[11px] text-slate-600" />
@@ -1438,24 +1543,71 @@
       updateFieldHighlights();
     }
 
+    function toggleRentalCalcMode(id) {
+      const mode = document.getElementById(`mMode_${id}`)?.value || 'personal';
+      if (mode !== 'rental') return;
+      const calcMode = document.getElementById(`mRentalCalcMode_${id}`)?.value || 'total';
+      const estCol = document.getElementById(`mEstCostCol_${id}`);
+      const dailyCol = document.getElementById(`mRentalDailyCol_${id}`);
+      if (calcMode === 'daily') {
+        estCol?.classList.add('hidden');
+        dailyCol?.classList.remove('hidden');
+      } else {
+        dailyCol?.classList.add('hidden');
+        estCol?.classList.remove('hidden');
+      }
+      updateFieldHighlights();
+    }
+
     function toggleGroundMode(id) {
       const mode = document.getElementById(`mMode_${id}`)?.value || 'personal';
       const distCol = document.getElementById(`mPersonalDistCol_${id}`);
       const rateCol = document.getElementById(`mPersonalRateCol_${id}`);
       const estCol = document.getElementById(`mEstCostCol_${id}`);
+      const dailyCol = document.getElementById(`mRentalDailyCol_${id}`);
       const notesCol = document.getElementById(`mTransitNotesCol_${id}`);
+      const rtLabel = document.getElementById(`mRoundtripLabel_${id}`);
+      const rentalCalcSelect = document.getElementById(`mRentalCalcMode_${id}`);
+      const notesLabel = document.getElementById(`mTransitNotesLabel_${id}`);
+      const notesInput = document.getElementById(`mTransitNotes_${id}`);
+      const originLabel = document.getElementById(`mOriginLabel_${id}`);
+      const destLabel = document.getElementById(`mDestLabel_${id}`);
 
       if (mode === 'personal') {
         distCol?.classList.remove('hidden');
         rateCol?.classList.remove('hidden');
         estCol?.classList.add('hidden');
+        dailyCol?.classList.add('hidden');
         notesCol?.classList.add('hidden');
+        rtLabel?.classList.remove('hidden');
+        rentalCalcSelect?.classList.add('hidden');
+        if (originLabel) originLabel.innerText = 'Origin';
+        if (destLabel) destLabel.innerText = 'Destination';
+      } else if (mode === 'rental') {
+        distCol?.classList.add('hidden');
+        rateCol?.classList.add('hidden');
+        notesCol?.classList.remove('hidden');
+        rtLabel?.classList.add('hidden');
+        rentalCalcSelect?.classList.remove('hidden');
+        if (originLabel) originLabel.innerText = 'Pickup Location';
+        if (destLabel) destLabel.innerText = 'Dropoff / Area';
+        if (notesLabel) notesLabel.innerText = 'Rental Agency & Justification';
+        if (notesInput) notesInput.placeholder = 'e.g. Enterprise — required for field site access';
+        toggleRentalCalcMode(id);
       } else {
         distCol?.classList.add('hidden');
         rateCol?.classList.add('hidden');
+        dailyCol?.classList.add('hidden');
         estCol?.classList.remove('hidden');
         notesCol?.classList.remove('hidden');
+        rtLabel?.classList.remove('hidden');
+        rentalCalcSelect?.classList.add('hidden');
+        if (originLabel) originLabel.innerText = 'Origin';
+        if (destLabel) destLabel.innerText = 'Destination';
+        if (notesLabel) notesLabel.innerText = 'Transit / Provider Notes';
+        if (notesInput) notesInput.placeholder = 'e.g. RTD SkyRide / Uber';
       }
+      updateFieldHighlights();
     }
 
     function removeMileageRow(id) {
@@ -1579,7 +1731,6 @@
 
     // --- Helper to resolve GSA Per Diem Lodging Rate for a Hotel Stay from Business Trip Legs ---
     function resolveHotelGSALodging(startVal, endVal, nights, allLegs) {
-      // Collect all Business legs (including ones whose dates may not be set yet)
       const bizLegEntries = [];
       document.querySelectorAll('[id^="legRow_"]').forEach(row => {
         const lid = row.id.split('_')[1];
@@ -1624,14 +1775,13 @@
 
       const checkIn = parseISODateLocal(startVal);
       const datedBizLegs = bizLegEntries.filter(l => l.start && l.end);
-      const segments = []; // [{ legId, locLabel, rate, nights }]
+      const segments = [];
       let totalCost = 0;
 
       for (let n = 0; n < nights; n++) {
         const nightDate = new Date(checkIn.getFullYear(), checkIn.getMonth(), checkIn.getDate() + n);
         let matchedLeg = datedBizLegs.find(l => nightDate >= l.start && nightDate <= l.end);
         if (!matchedLeg && datedBizLegs.length > 0) {
-          // Closest dated business leg if check-in/out extends slightly beyond leg dates
           matchedLeg = datedBizLegs.reduce((best, curr) => {
             const bestDist = Math.min(Math.abs(nightDate - best.start), Math.abs(nightDate - best.end));
             const currDist = Math.min(Math.abs(nightDate - curr.start), Math.abs(nightDate - curr.end));
@@ -1799,8 +1949,9 @@
 
       const airfareCapped = airfareTotal < rawAirfareTotal - 1e-6;
 
-      // Ground Mileage (Personal Car) vs Taxi/Rideshare/Train/Shuttle calculations
+      // Ground Mileage (Personal Car), Rental Car, and Taxi/Rideshare/Train/Shuttle calculations
       let personalMileageTotal = 0;
+      let rentalCarTotal = 0;
       let transitTaxiTotal = 0;
       let groundTripDetails = [];
 
@@ -1808,7 +1959,7 @@
         const id = row.id.split('_')[1];
         const mode = document.getElementById(`mMode_${id}`)?.value || 'personal';
         const isRoundtrip = !!document.getElementById(`mRoundtrip_${id}`)?.checked;
-        const multiplier = isRoundtrip ? 2 : 1;
+        const multiplier = (mode === 'rental') ? 1 : (isRoundtrip ? 2 : 1);
         const date = document.getElementById(`mDate_${id}`)?.value || '';
         const origin = document.getElementById(`mOrigin_${id}`)?.value || '';
         const dest = document.getElementById(`mDest_${id}`)?.value || '';
@@ -1816,7 +1967,11 @@
         const distLabel = document.getElementById(`mDistLabel_${id}`);
         if (distLabel) distLabel.innerText = isRoundtrip ? 'One-Way Miles (2x RT)' : 'One-Way Miles';
         const estLabel = document.getElementById(`mEstCostLabel_${id}`);
-        if (estLabel) estLabel.innerText = isRoundtrip ? 'One-Way Est. Cost ($)' : 'Estimated Cost ($)';
+        if (estLabel) {
+          estLabel.innerText = (mode === 'rental')
+            ? 'Estimated Total Cost ($)'
+            : (isRoundtrip ? 'One-Way Est. Cost ($)' : 'Estimated Cost ($)');
+        }
 
         let rowCost = 0;
         if (mode === 'personal') {
@@ -1829,6 +1984,24 @@
           groundTripDetails.push({
             id, mode, isRoundtrip, date, origin, dest,
             baseDist, totalMiles, truncRate, cost: rowCost
+          });
+        } else if (mode === 'rental') {
+          const rentalCalcMode = document.getElementById(`mRentalCalcMode_${id}`)?.value || 'total';
+          const notes = document.getElementById(`mTransitNotes_${id}`)?.value || '';
+          let rentalDays = 0;
+          let rentalDailyRate = 0;
+          if (rentalCalcMode === 'daily') {
+            rentalDays = parseFloat(document.getElementById(`mRentalDays_${id}`)?.value) || 0;
+            rentalDailyRate = parseFloat(document.getElementById(`mRentalDailyRate_${id}`)?.value) || 0;
+            rowCost = rentalDays * rentalDailyRate;
+          } else {
+            rowCost = parseFloat(document.getElementById(`mEstCost_${id}`)?.value) || 0;
+          }
+          rentalCarTotal += rowCost;
+
+          groundTripDetails.push({
+            id, mode, isRoundtrip: false, date, origin, dest,
+            rentalCalcMode, rentalDays, rentalDailyRate, notes, cost: rowCost
           });
         } else {
           const baseCost = parseFloat(document.getElementById(`mEstCost_${id}`)?.value) || 0;
@@ -1845,6 +2018,13 @@
         const subEl = document.getElementById(`mRowSubtotal_${id}`);
         if (subEl) subEl.innerText = `Subtotal: $${rowCost.toFixed(2)}`;
       });
+
+      // Auto-sync Section 7 "Use of rental car" checkbox if Rental Car row exists in Section 6 (unless user manually unchecked)
+      const hasRentalCarRow = groundTripDetails.some(t => t.mode === 'rental');
+      const sfRentalCb = document.getElementById('sfRentalCar');
+      if (sfRentalCb && hasRentalCarRow && !rentalCarManualOverride) {
+        sfRentalCb.checked = true;
+      }
 
       // Conference Registration & Additional Fees calculations
       let totalConfRegFee = 0;
@@ -1942,7 +2122,7 @@
         renderMealsMatrix([]);
         const htComp = evaluateHotelSingleOccComp(hotelTotalFromRows);
         const effectiveLodgingTotal = htComp.effectiveLodgingTotal;
-        const grandTotal = airfareTotal + personalMileageTotal + transitTaxiTotal + totalConfRegFee + totalConfAddFee + effectiveLodgingTotal;
+        const grandTotal = airfareTotal + rentalCarTotal + personalMileageTotal + transitTaxiTotal + totalConfRegFee + totalConfAddFee + effectiveLodgingTotal;
         document.getElementById('calcDays').innerText = "0";
         document.getElementById('calcBizDays').innerText = "0";
         document.getElementById('calcMeals').innerText = "0.00";
@@ -1950,6 +2130,7 @@
         document.getElementById('calcAirfareTotal').innerText = airfareTotal.toFixed(2);
         document.getElementById('calcConfRegTotal').innerText = totalConfRegFee.toFixed(2);
         document.getElementById('calcConfAddTotal').innerText = totalConfAddFee.toFixed(2);
+        document.getElementById('calcRentalCarTotal').innerText = rentalCarTotal.toFixed(2);
         document.getElementById('calcMileageTotal').innerText = personalMileageTotal.toFixed(2);
         document.getElementById('calcTransitTotal').innerText = transitTaxiTotal.toFixed(2);
         document.getElementById('calcGrandTotal').innerText = grandTotal.toFixed(2);
@@ -1959,7 +2140,7 @@
           lodgingCapped: htComp.isCapped, hotelCompInfo: htComp,
           lodgingPerDiemTotal: 0, usedHotelRows: hotelTotalFromRows > 0 || hasPerDiemHotelRow,
           rawAirfareTotal, airfareTotal, airfareCapped, flightDetails,
-          mileageTotal: personalMileageTotal, transitTotal: transitTaxiTotal,
+          rentalCarTotal, mileageTotal: personalMileageTotal, transitTotal: transitTaxiTotal,
           regFee: totalConfRegFee, addFee: totalConfAddFee, addFeeDesc: confAddFeeDescriptions.join(', '),
           grandTotal, overallStart: '', overallEnd: '', legs: allLegs, dailySchedule: [],
           groundTripDetails, conferenceDetails, hotelDetails
@@ -2074,7 +2255,7 @@
       const htComp = evaluateHotelSingleOccComp(rawLodgingTotal);
       const effectiveLodgingTotal = htComp.effectiveLodgingTotal;
 
-      const grandTotal = mealTotal + effectiveLodgingTotal + airfareTotal + personalMileageTotal + transitTaxiTotal + totalConfRegFee + totalConfAddFee;
+      const grandTotal = mealTotal + effectiveLodgingTotal + airfareTotal + rentalCarTotal + personalMileageTotal + transitTaxiTotal + totalConfRegFee + totalConfAddFee;
 
       document.getElementById('calcDays').innerText = totalDays;
       document.getElementById('calcBizDays').innerText = bizDays;
@@ -2083,6 +2264,7 @@
       document.getElementById('calcAirfareTotal').innerText = airfareTotal.toFixed(2);
       document.getElementById('calcConfRegTotal').innerText = totalConfRegFee.toFixed(2);
       document.getElementById('calcConfAddTotal').innerText = totalConfAddFee.toFixed(2);
+      document.getElementById('calcRentalCarTotal').innerText = rentalCarTotal.toFixed(2);
       document.getElementById('calcMileageTotal').innerText = personalMileageTotal.toFixed(2);
       document.getElementById('calcTransitTotal').innerText = transitTaxiTotal.toFixed(2);
       document.getElementById('calcGrandTotal').innerText = grandTotal.toFixed(2);
@@ -2103,6 +2285,7 @@
         airfareTotal,
         airfareCapped,
         flightDetails,
+        rentalCarTotal,
         mileageTotal: personalMileageTotal,
         transitTotal: transitTaxiTotal,
         regFee: totalConfRegFee,
@@ -2224,6 +2407,8 @@
         hotelOverPerDiem: {
           confHotel: document.getElementById('htOverConfHotel').checked,
           confHotelNotes: document.getElementById('htOverConfHotelNotes').value,
+          specialEvents: document.getElementById('htOverSpecialEvents').checked,
+          specialEventsNotes: document.getElementById('htOverSpecialEventsNotes').value,
           safety: document.getElementById('htOverSafety').checked,
           safetyNotes: document.getElementById('htOverSafetyNotes').value,
           distance: document.getElementById('htOverDistance').checked,
@@ -2240,6 +2425,19 @@
           comment: document.getElementById('htSingleOccComment').value,
           screenshots: hotelSingleOccScreenshots
         },
+        specialFundingApprovals: {
+          useOfOH: document.getElementById('sfUseOfOH').checked,
+          useOfOHNotes: document.getElementById('sfUseOfOHNotes').value,
+          rentalCar: document.getElementById('sfRentalCar').checked,
+          rentalCarNotes: document.getElementById('sfRentalCarNotes').value,
+          rentalCarManualOverride,
+          international: document.getElementById('sfInternational').checked,
+          internationalNotes: document.getElementById('sfInternationalNotes').value,
+          intlDomestic: document.getElementById('sfIntlDomestic').checked,
+          intlNonDomestic: document.getElementById('sfIntlNonDomestic').checked,
+          comparables: document.getElementById('sfComparables').checked,
+          comparablesNotes: document.getElementById('sfComparablesNotes').value
+        },
         travelAdjustments: {
           family: document.getElementById('adjFamily').checked,
           familyNotes: document.getElementById('adjFamilyNotes').value,
@@ -2247,6 +2445,8 @@
           sharedRoomNotes: document.getElementById('adjSharedRoomNotes').value,
           sharedRoomNoDiff: document.getElementById('adjSharedRoomNoDiff').checked,
           sharedRoomNoDiffNotes: document.getElementById('adjSharedRoomNoDiffNotes').value,
+          travelAgent: document.getElementById('adjTravelAgent').checked,
+          travelAgentNotes: document.getElementById('adjTravelAgentNotes').value,
           outsideOrg: document.getElementById('adjOutsideOrg').checked,
           outsideOrgNotes: document.getElementById('adjOutsideOrgNotes').value,
           personalTime: document.getElementById('adjPersonalTime').checked,
@@ -2338,6 +2538,9 @@
         data.mileageTrips.push({
           mode: document.getElementById(`mMode_${id}`).value,
           roundtrip: document.getElementById(`mRoundtrip_${id}`).checked,
+          rentalCalcMode: document.getElementById(`mRentalCalcMode_${id}`)?.value || 'total',
+          rentalDays: document.getElementById(`mRentalDays_${id}`)?.value || '',
+          rentalDailyRate: document.getElementById(`mRentalDailyRate_${id}`)?.value || '',
           date: document.getElementById(`mDate_${id}`).value,
           origin: document.getElementById(`mOrigin_${id}`).value,
           dest: document.getElementById(`mDest_${id}`).value,
@@ -2397,6 +2600,8 @@
           if (data.hotelOverPerDiem) {
             document.getElementById('htOverConfHotel').checked = !!data.hotelOverPerDiem.confHotel;
             document.getElementById('htOverConfHotelNotes').value = data.hotelOverPerDiem.confHotelNotes || '';
+            document.getElementById('htOverSpecialEvents').checked = !!data.hotelOverPerDiem.specialEvents;
+            document.getElementById('htOverSpecialEventsNotes').value = data.hotelOverPerDiem.specialEventsNotes || '';
             document.getElementById('htOverSafety').checked = !!data.hotelOverPerDiem.safety;
             document.getElementById('htOverSafetyNotes').value = data.hotelOverPerDiem.safetyNotes || '';
             document.getElementById('htOverDistance').checked = !!data.hotelOverPerDiem.distance;
@@ -2423,6 +2628,22 @@
           }
           renderHotelScreenshots();
 
+          if (data.specialFundingApprovals) {
+            document.getElementById('sfUseOfOH').checked = !!data.specialFundingApprovals.useOfOH;
+            document.getElementById('sfUseOfOHNotes').value = data.specialFundingApprovals.useOfOHNotes || '';
+            document.getElementById('sfRentalCar').checked = !!data.specialFundingApprovals.rentalCar;
+            document.getElementById('sfRentalCarNotes').value = data.specialFundingApprovals.rentalCarNotes || '';
+            rentalCarManualOverride = !!data.specialFundingApprovals.rentalCarManualOverride;
+            document.getElementById('sfInternational').checked = !!data.specialFundingApprovals.international;
+            document.getElementById('sfInternationalNotes').value = data.specialFundingApprovals.internationalNotes || '';
+            document.getElementById('sfIntlDomestic').checked = !!data.specialFundingApprovals.intlDomestic;
+            document.getElementById('sfIntlNonDomestic').checked = !!data.specialFundingApprovals.intlNonDomestic;
+            document.getElementById('sfComparables').checked = !!data.specialFundingApprovals.comparables;
+            document.getElementById('sfComparablesNotes').value = data.specialFundingApprovals.comparablesNotes || '';
+          } else {
+            rentalCarManualOverride = false;
+          }
+
           if (data.travelAdjustments) {
             document.getElementById('adjFamily').checked = !!data.travelAdjustments.family;
             document.getElementById('adjFamilyNotes').value = data.travelAdjustments.familyNotes || '';
@@ -2430,6 +2651,8 @@
             document.getElementById('adjSharedRoomNotes').value = data.travelAdjustments.sharedRoomNotes || '';
             document.getElementById('adjSharedRoomNoDiff').checked = !!data.travelAdjustments.sharedRoomNoDiff;
             document.getElementById('adjSharedRoomNoDiffNotes').value = data.travelAdjustments.sharedRoomNoDiffNotes || 'See attached comparison in Travel Summary';
+            document.getElementById('adjTravelAgent').checked = !!data.travelAdjustments.travelAgent;
+            document.getElementById('adjTravelAgentNotes').value = data.travelAdjustments.travelAgentNotes || '';
             document.getElementById('adjOutsideOrg').checked = !!data.travelAdjustments.outsideOrg;
             document.getElementById('adjOutsideOrgNotes').value = data.travelAdjustments.outsideOrgNotes || '';
             document.getElementById('adjPersonalTime').checked = !!data.travelAdjustments.personalTime;
@@ -2483,8 +2706,102 @@
       }
     }
 
-    // --- Build Brief Summary Text for Special Funding Approval Justifications ---
+    // --- Word-Wrap Helper for Stacked Single-Line AcroForm Fields ---
+    function wrapTextToLines(text, font, fontSize, maxWidth) {
+      if (!text) return [];
+      const words = text.trim().split(/\s+/);
+      const lines = [];
+      let currentLine = '';
+
+      for (const word of words) {
+        const candidate = currentLine ? `${currentLine} ${word}` : word;
+        if (font.widthOfTextAtSize(candidate, fontSize) <= maxWidth) {
+          currentLine = candidate;
+        } else {
+          if (currentLine) {
+            lines.push(currentLine);
+            currentLine = '';
+          }
+          // Break single word only if it alone exceeds maxWidth
+          if (font.widthOfTextAtSize(word, fontSize) <= maxWidth) {
+            currentLine = word;
+          } else {
+            let chunk = '';
+            for (const ch of word) {
+              if (font.widthOfTextAtSize(chunk + ch, fontSize) <= maxWidth) {
+                chunk += ch;
+              } else {
+                if (chunk) lines.push(chunk);
+                chunk = ch;
+              }
+            }
+            currentLine = chunk;
+          }
+        }
+      }
+      if (currentLine) lines.push(currentLine);
+      return lines;
+    }
+
+    function fillWrappedJustificationFields(form, font, fieldNames, text) {
+      // Clear all target lines in this justification block first
+      const validFields = [];
+      fieldNames.forEach(name => {
+        try {
+          const tf = form.getTextField(name);
+          if (tf) {
+            tf.setText('');
+            const widgets = tf.acroField.getWidgets();
+            const width = (widgets && widgets[0]) ? widgets[0].getRectangle().width : 190;
+            validFields.push({ tf, width });
+          }
+        } catch (e) {}
+      });
+
+      if (!text || validFields.length === 0) return;
+
+      const maxLines = validFields.length;
+      const minFieldWidth = Math.min(...validFields.map(v => v.width));
+      const usableWidth = Math.max(80, minFieldWidth - 6);
+
+      // Choose largest font size from [8, 7.5, 7, 6.5] that fits within maxLines
+      let chosenSize = 8;
+      let wrappedLines = wrapTextToLines(text, font, chosenSize, usableWidth);
+      for (const candidateSize of [7.5, 7, 6.5]) {
+        if (wrappedLines.length <= maxLines) break;
+        chosenSize = candidateSize;
+        wrappedLines = wrapTextToLines(text, font, chosenSize, usableWidth);
+      }
+
+      // If still exceeding maxLines, truncate cleanly with ellipsis on the final line
+      if (wrappedLines.length > maxLines) {
+        const overflowRest = wrappedLines.slice(maxLines - 1).join(' ');
+        let lastLine = overflowRest;
+        while (lastLine.length > 3 && font.widthOfTextAtSize(lastLine + '...', chosenSize) > usableWidth) {
+          lastLine = lastLine.slice(0, -1).trimEnd();
+        }
+        wrappedLines = [...wrappedLines.slice(0, maxLines - 1), lastLine + '...'];
+      }
+
+      wrappedLines.forEach((lineStr, idx) => {
+        if (idx < validFields.length) {
+          try {
+            validFields[idx].tf.setFontSize(chosenSize);
+            validFields[idx].tf.setText(lineStr);
+          } catch (e) {
+            validFields[idx].tf.setText(lineStr);
+          }
+        }
+      });
+    }
+
+    // --- Build Summary Texts for All 6 Special Funding Approval Boxes ---
     function getSpecialFundingSummaries(totals) {
+      // 1. Use of Overhead Funds
+      const useOfOHNote = document.getElementById('sfUseOfOHNotes')?.value?.trim();
+      const useOfOHText = useOfOHNote ? `See attached — ${useOfOHNote}` : 'See attached';
+
+      // 2. Lodging Over Per Diem
       const overParts = [];
       const addOverPart = (cbId, noteId, label) => {
         if (document.getElementById(cbId)?.checked) {
@@ -2492,7 +2809,8 @@
           overParts.push(n ? `${label} (${n})` : label);
         }
       };
-      addOverPart('htOverConfHotel', 'htOverConfHotelNotes', 'Conference hotel');
+      addOverPart('htOverConfHotel', 'htOverConfHotelNotes', 'Lodging at prearranged place / conference hotel');
+      addOverPart('htOverSpecialEvents', 'htOverSpecialEventsNotes', 'Special events escalated cost');
       addOverPart('htOverSafety', 'htOverSafetyNotes', 'Safety considerations');
       addOverPart('htOverDistance', 'htOverDistanceNotes', 'Distance from conference');
       addOverPart('htOverHighDemand', 'htOverHighDemandNotes', 'High demand in area');
@@ -2501,6 +2819,30 @@
         ? `See attached — ${overParts.join('; ')}`
         : 'See attached';
 
+      // 3. Use of Rental Car
+      const rcParts = [];
+      const sfRcNote = document.getElementById('sfRentalCarNotes')?.value?.trim();
+      if (sfRcNote) rcParts.push(sfRcNote);
+      totals.groundTripDetails
+        .filter(t => t.mode === 'rental' && t.notes && t.notes.trim())
+        .forEach(t => {
+          if (!rcParts.includes(t.notes.trim())) rcParts.push(t.notes.trim());
+        });
+      const rentalCarText = rcParts.length > 0
+        ? `See attached — ${rcParts.join('; ')}`
+        : 'See attached';
+
+      // 4. International Travel
+      const intlParts = [];
+      if (document.getElementById('sfIntlDomestic')?.checked) intlParts.push('Domestic air carriers');
+      if (document.getElementById('sfIntlNonDomestic')?.checked) intlParts.push('Non-domestic air carriers');
+      const intlNote = document.getElementById('sfInternationalNotes')?.value?.trim();
+      if (intlNote) intlParts.push(intlNote);
+      const internationalText = intlParts.length > 0
+        ? `See attached — ${intlParts.join('; ')}`
+        : 'See attached';
+
+      // 5. Documentation of Other Non-Standard Situations
       const nonStdParts = [];
       const addAdjPart = (cbId, noteId, label) => {
         if (document.getElementById(cbId)?.checked) {
@@ -2513,6 +2855,7 @@
       if (document.getElementById('adjSharedRoomNoDiff')?.checked) {
         nonStdParts.push('Single/double room cost verified equal');
       }
+      addAdjPart('adjTravelAgent', 'adjTravelAgentNotes', 'Use of SSI travel agent');
       addAdjPart('adjOutsideOrg', 'adjOutsideOrgNotes', 'Outside org support');
       addAdjPart('adjPersonalTime', 'adjPersonalTimeNotes', 'Personal time added');
       addAdjPart('adjAltLocation', 'adjAltLocationNotes', 'Non-home start/stop');
@@ -2521,6 +2864,7 @@
         ? `See attached — ${nonStdParts.join('; ')}`
         : 'See attached';
 
+      // 6. Comparable Lodging/Airfare
       const compParts = [];
       const flightReasonsAll = [];
       totals.flightDetails.forEach(fl => {
@@ -2540,12 +2884,21 @@
       if (hasHotelComp) {
         compParts.push('Single-occupancy lodging comp');
       }
+
+      const manualCompNote = document.getElementById('sfComparablesNotes')?.value?.trim();
+      if (manualCompNote) {
+        compParts.push(manualCompNote);
+      }
+
       const comparablesText = compParts.length > 0
         ? `See attached — ${compParts.join('; ')}`
         : 'See attached';
 
       return {
+        useOfOHText,
         overPerDiemText,
+        rentalCarText,
+        internationalText,
         nonStdText,
         comparablesText
       };
@@ -2558,6 +2911,7 @@
       const pdfDoc = await lib.PDFDocument.load(bytes);
       const form = pdfDoc.getForm();
       const totals = calculateTotals();
+      const helvFont = await pdfDoc.embedFont(lib.StandardFonts.Helvetica);
 
       const setField = (fieldName, val) => {
         try {
@@ -2583,7 +2937,7 @@
       setField('TA NUMBER', taNumberVal);
       try {
         const page1 = pdfDoc.getPages()[0];
-        const font = await pdfDoc.embedFont(lib.StandardFonts.HelveticaBold);
+        const fontBold = await pdfDoc.embedFont(lib.StandardFonts.HelveticaBold);
         page1.drawRectangle({
           x: 135,
           y: 690,
@@ -2595,7 +2949,7 @@
           x: 136.8,
           y: 693.5,
           size: 13,
-          font,
+          font: fontBold,
           color: lib.rgb(0, 0, 0)
         });
       } catch (e) {
@@ -2626,7 +2980,7 @@
       setField('Total#2', totals.airfareTotal.toFixed(2));
 
       // Taxi / Bus / Shuttle / Rideshare / Train
-      const transitTrips = totals.groundTripDetails.filter(t => t.mode !== 'personal');
+      const transitTrips = totals.groundTripDetails.filter(t => t.mode !== 'personal' && t.mode !== 'rental');
       if (totals.transitTotal > 0 || transitTrips.length > 0) {
         const transitDates = transitTrips.map(t => t.date).filter(Boolean);
         const dateLabel = transitDates.length > 0 ? transitDates.join(', ') : `${totals.overallStart} - ${totals.overallEnd}`;
@@ -2641,10 +2995,18 @@
         setField('Total#5', totals.regFee.toFixed(2));
       }
 
-      if (totals.addFee > 0) {
-        setField('OTHERSPECIFYRow1', totals.addFeeDesc || 'Additional Conference Fees');
-        setField('DATES#9', totals.overallStart);
-        setField('Total#9', totals.addFee.toFixed(2));
+      // Rental Car (Estimated Expenses Row)
+      const rentalTrips = totals.groundTripDetails.filter(t => t.mode === 'rental');
+      if (totals.rentalCarTotal > 0 || rentalTrips.length > 0) {
+        const rentalDates = rentalTrips.map(t => t.date).filter(Boolean);
+        const rentalDateLabel = rentalDates.length > 0 ? rentalDates.join(', ') : `${totals.overallStart} - ${totals.overallEnd}`;
+        let rentalRateLabel = 'Estimated Cost';
+        if (rentalTrips.length === 1 && rentalTrips[0].rentalCalcMode === 'daily' && rentalTrips[0].rentalDays > 0) {
+          rentalRateLabel = `${rentalTrips[0].rentalDays} day(s) @ $${rentalTrips[0].rentalDailyRate.toFixed(2)}/day`;
+        }
+        setField('RENTAL CAR', rentalRateLabel);
+        setField('DATES#6', rentalDateLabel);
+        setField('Total#6', totals.rentalCarTotal.toFixed(2));
       }
 
       // Personal Car Mileage
@@ -2665,132 +3027,99 @@
         setField('Total#7', totals.mileageTotal.toFixed(2));
       }
 
+      if (totals.addFee > 0) {
+        setField('OTHERSPECIFYRow1', totals.addFeeDesc || 'Additional Conference Fees');
+        setField('DATES#9', totals.overallStart);
+        setField('Total#9', totals.addFee.toFixed(2));
+      }
+
       setField('TOTAL#11', totals.grandTotal.toFixed(2));
 
-      // Over Per Diem & Prearranged Checkboxes
-      const overConfHotel = document.getElementById('htOverConfHotel')?.checked;
-      const overSafety = document.getElementById('htOverSafety')?.checked;
-      const overDistance = document.getElementById('htOverDistance')?.checked;
-      const overHighDemand = document.getElementById('htOverHighDemand')?.checked;
-      const overOther = document.getElementById('htOverOther')?.checked;
+      // --- Special Funding Approvals Checkboxes & Wrapped Justification Lines ---
+      const summaries = getSpecialFundingSummaries(totals);
 
-      const anyOverPerDiem = overConfHotel || overSafety || overDistance || overHighDemand || overOther;
+      // 1. Use of Overhead Funds
+      const isUseOfOH = !!document.getElementById('sfUseOfOH')?.checked;
+      if (isUseOfOH) {
+        checkBoxSafe('Use of OH');
+        fillWrappedJustificationFields(form, helvFont, ['undefined_2', 'BUSINESS OFFICE'], summaries.useOfOHText);
+      }
+
+      // 2. Lodging Over Per Diem & Sub-Checkboxes
+      const overConfHotel = !!document.getElementById('htOverConfHotel')?.checked;
+      const overSpecialEvents = !!document.getElementById('htOverSpecialEvents')?.checked;
+      const overSafety = !!document.getElementById('htOverSafety')?.checked;
+      const overDistance = !!document.getElementById('htOverDistance')?.checked;
+      const overHighDemand = !!document.getElementById('htOverHighDemand')?.checked;
+      const overOtherReason = !!document.getElementById('htOverOther')?.checked;
+
+      const anyLodgingOtherSub = overSafety || overDistance || overHighDemand || overOtherReason;
+      const anyOverPerDiem = overConfHotel || overSpecialEvents || anyLodgingOtherSub;
+
       if (anyOverPerDiem) {
         checkBoxSafe('Over Per Diem');
-      }
-      if (overConfHotel) {
-        checkBoxSafe('Prearranged');
+        if (overConfHotel) checkBoxSafe('Prearranged');
+        if (overSpecialEvents) checkBoxSafe('Special events');
+        if (anyLodgingOtherSub) checkBoxSafe('Other');
+
+        fillWrappedJustificationFields(
+          form,
+          helvFont,
+          ['1', '2', '3', '4', 'EXECUTIVE DIRECTOR'],
+          summaries.overPerDiemText
+        );
       }
 
-      // Nonstandard Situations Checkbox
-      const isNonStandard = document.getElementById('adjFamily').checked || 
-                            document.getElementById('adjSharedRoom').checked || 
-                            document.getElementById('adjSharedRoomNoDiff').checked || 
-                            document.getElementById('adjOutsideOrg').checked || 
-                            document.getElementById('adjPersonalTime').checked || 
-                            document.getElementById('adjAltLocation').checked || 
-                            document.getElementById('adjOther').checked;
+      // 3. Use of Rental Car
+      const isRentalCar = !!document.getElementById('sfRentalCar')?.checked || totals.rentalCarTotal > 0 || rentalTrips.length > 0;
+      if (isRentalCar) {
+        checkBoxSafe('Rental Car');
+        fillWrappedJustificationFields(form, helvFont, ['undefined_3', 'BUSINESS OFFICE_3'], summaries.rentalCarText);
+      }
+
+      // 4. International Travel & Carrier Sub-Checkboxes
+      const intlDomestic = !!document.getElementById('sfIntlDomestic')?.checked;
+      const intlNonDomestic = !!document.getElementById('sfIntlNonDomestic')?.checked;
+      const isInternational = !!document.getElementById('sfInternational')?.checked || intlDomestic || intlNonDomestic;
+      if (isInternational) {
+        checkBoxSafe('International');
+        if (intlDomestic) checkBoxSafe('Domestic');
+        if (intlNonDomestic) checkBoxSafe('NonDomestic');
+
+        fillWrappedJustificationFields(form, helvFont, ['1_2', '2_2', 'BUSINESS OFFICE_4'], summaries.internationalText);
+      }
+
+      // 5. Documentation of Other Non-Standard Situations
+      const isNonStandard = !!document.getElementById('adjFamily')?.checked || 
+                            !!document.getElementById('adjSharedRoom')?.checked || 
+                            !!document.getElementById('adjSharedRoomNoDiff')?.checked || 
+                            !!document.getElementById('adjTravelAgent')?.checked || 
+                            !!document.getElementById('adjOutsideOrg')?.checked || 
+                            !!document.getElementById('adjPersonalTime')?.checked || 
+                            !!document.getElementById('adjAltLocation')?.checked || 
+                            !!document.getElementById('adjOther')?.checked;
       if (isNonStandard) {
         checkBoxSafe('Nonstandard');
+        fillWrappedJustificationFields(
+          form,
+          helvFont,
+          ['PURCHASE PROHIBITED WITHOUT APPROVAL', 'BUSINESS OFFICE_5', '1_3', '2_3'],
+          summaries.nonStdText
+        );
       }
 
-      // Comparable Lodging/Airfare Checkbox
-      const hasComps = hasAnyFlightCompActivity() ||
+      // 6. Comparable Lodging/Airfare
+      const hasComps = !!document.getElementById('sfComparables')?.checked ||
+                       hasAnyFlightCompActivity() ||
                        flightCompScreenshots.length > 0 ||
                        hotelSingleOccScreenshots.length > 0 ||
                        (totals.hotelCompInfo?.isFamilyOrShared && totals.hotelCompInfo?.compMode !== 'not_available');
       if (hasComps) {
         checkBoxSafe('Comparables');
+        fillWrappedJustificationFields(form, helvFont, ['undefined_4'], summaries.comparablesText);
       }
 
-      // Populate "See attached — [brief summary]" in the JUSTIFICATION column for every checked box under Special Funding Approvals
-      try {
-        const page1Ref = pdfDoc.getPages()[0].ref;
-        const allFields = form.getFields();
-        const summaries = getSpecialFundingSummaries(totals);
-
-        const justificationFields = [];
-        const specialCheckboxes = [];
-
-        allFields.forEach(f => {
-          const widgets = f.acroField.getWidgets();
-          if (!widgets || widgets.length === 0) return;
-          const w = widgets[0];
-          const pRef = w.P();
-          if (pRef && pRef !== page1Ref) return;
-          const rect = w.getRectangle();
-
-          if (rect.y >= 75 && rect.y <= 470) {
-            if (f instanceof lib.PDFTextField && rect.x >= 170 && rect.x <= 465) {
-              justificationFields.push({ field: f, name: f.getName(), rect });
-            } else if (f instanceof lib.PDFCheckBox && rect.x < 350) {
-              specialCheckboxes.push({ field: f, name: f.getName(), rect });
-            }
-          }
-        });
-
-        const assignedTextByFieldName = new Map();
-
-        specialCheckboxes.forEach(cbInfo => {
-          let isChecked = false;
-          try { isChecked = cbInfo.field.isChecked(); } catch (e) {}
-          if (!isChecked) return;
-
-          const cbCenterY = cbInfo.rect.y + cbInfo.rect.height / 2;
-
-          let targetTf = justificationFields.find(tf =>
-            cbCenterY >= (tf.rect.y - 4) && cbCenterY <= (tf.rect.y + tf.rect.height + 4)
-          );
-          if (!targetTf && justificationFields.length > 0) {
-            targetTf = [...justificationFields].sort((a, b) => {
-              const distA = Math.abs((a.rect.y + a.rect.height / 2) - cbCenterY);
-              const distB = Math.abs((b.rect.y + b.rect.height / 2) - cbCenterY);
-              return distA - distB;
-            })[0];
-          }
-
-          if (!targetTf) return;
-
-          const cbName = cbInfo.name;
-          let summaryForBox = 'See attached';
-          if (cbName === 'Over Per Diem' || cbName === 'Prearranged') {
-            summaryForBox = summaries.overPerDiemText;
-          } else if (cbName === 'Nonstandard') {
-            summaryForBox = summaries.nonStdText;
-          } else if (cbName === 'Comparables') {
-            summaryForBox = summaries.comparablesText;
-          }
-
-          if (!assignedTextByFieldName.has(targetTf.name)) {
-            assignedTextByFieldName.set(targetTf.name, { tfInfo: targetTf, text: summaryForBox });
-          } else {
-            const existing = assignedTextByFieldName.get(targetTf.name);
-            if (existing.text !== summaryForBox && summaryForBox !== 'See attached') {
-              const extraSuffix = summaryForBox.replace(/^See attached(\s*—\s*)?/, '');
-              if (extraSuffix && !existing.text.includes(extraSuffix)) {
-                existing.text = existing.text === 'See attached'
-                  ? `See attached — ${extraSuffix}`
-                  : `${existing.text}; ${extraSuffix}`;
-              }
-            }
-          }
-        });
-
-        assignedTextByFieldName.forEach(({ tfInfo, text }) => {
-          try {
-            if (tfInfo.rect.height >= 18) {
-              tfInfo.field.enableMultiline();
-            }
-            tfInfo.field.setFontSize(8);
-            tfInfo.field.setText(text);
-          } catch (e) {
-            tfInfo.field.setText(text);
-          }
-        });
-      } catch (e) {
-        console.warn("Could not populate Special Funding Justification fields:", e);
-      }
-
+      // Page 2 Cost Centers
       const ccFields = [
         ['COST CENTER NO', 'AMOUNT', 'DESCRIPTION'],
         ['undefined_5', 'undefined_6', 'undefined_7'],
@@ -2959,30 +3288,35 @@
     function getMileageDocDefinition() {
       const totals = calculateTotals();
       let tableBody = [
-        [{ text: 'Date', bold: true }, { text: 'Mode / Trip Type', bold: true }, { text: 'Route (Origin -> Destination)', bold: true }, { text: 'Details', bold: true }, { text: 'Total', bold: true }]
+        [{ text: 'Date', bold: true }, { text: 'Mode / Trip Type', bold: true }, { text: 'Route / Location', bold: true }, { text: 'Details', bold: true }, { text: 'Total', bold: true }]
       ];
 
       const modeLabels = {
         personal: 'Personal Car',
+        rental: 'Rental Car',
         transit: 'Transit / Train',
         taxi: 'Taxi / Rideshare',
         shuttle: 'Shuttle'
       };
 
       totals.groundTripDetails.forEach(t => {
-        const tripType = t.isRoundtrip ? 'Roundtrip' : 'One-Way';
+        const tripType = (t.mode === 'rental') ? 'Rental Period' : (t.isRoundtrip ? 'Roundtrip' : 'One-Way');
         const modeStr = `${modeLabels[t.mode] || t.mode}\n(${tripType})`;
-        const routeStr = `${t.origin || ''} -> ${t.dest || ''}`;
+        const routeStr = `${t.origin || ''}${t.dest ? ' -> ' + t.dest : ''}`;
         let detailStr = '';
         if (t.mode === 'personal') {
           detailStr = `${t.totalMiles} mi @ $${t.truncRate.toFixed(2)}/mi`;
+        } else if (t.mode === 'rental') {
+          detailStr = (t.rentalCalcMode === 'daily' && t.rentalDays > 0)
+            ? `${t.rentalDays} day(s) @ $${t.rentalDailyRate.toFixed(2)}/day${t.notes ? '\n' + t.notes : ''}`
+            : `Estimated Total Cost${t.notes ? '\n' + t.notes : ''}`;
         } else {
           detailStr = `Est. Cost${t.isRoundtrip ? ` ($${t.baseCost.toFixed(2)} x 2)` : ''}${t.notes ? '\n' + t.notes : ''}`;
         }
         tableBody.push([
           t.date || 'N/A',
           modeStr,
-          routeStr,
+          routeStr || 'N/A',
           detailStr,
           `$${t.cost.toFixed(2)}`
         ]);
@@ -2991,15 +3325,16 @@
       return {
         content: [
           { text: 'SPACE SCIENCE INSTITUTE', style: 'agencyHeader', alignment: 'center' },
-          { text: 'Personal Vehicle & Ground Transportation Summary', style: 'header', alignment: 'center', margin: [0, 2, 0, 15] },
-          { table: { widths: ['14%', '18%', '32%', '22%', '14%'], body: tableBody }, margin: [0, 0, 0, 15] },
+          { text: 'Personal Vehicle, Rental Car & Ground Transportation Summary', style: 'header', alignment: 'center', margin: [0, 2, 0, 15] },
+          { table: { widths: ['14%', '18%', '30%', '24%', '14%'], body: tableBody }, margin: [0, 0, 0, 15] },
           {
             text: [
+              `Rental Car Subtotal: $${totals.rentalCarTotal.toFixed(2)}  |  `,
               `Personal Car Mileage Subtotal: $${totals.mileageTotal.toFixed(2)}  |  `,
               `Taxi / Rideshare / Train / Shuttle Subtotal: $${totals.transitTotal.toFixed(2)}`
             ],
             bold: true,
-            fontSize: 10,
+            fontSize: 9.5,
             color: '#1e293b'
           }
         ],
@@ -3106,12 +3441,13 @@
         }
       });
 
-      const modeLabels = { personal: 'Personal Car', transit: 'Transit/Train', taxi: 'Taxi/Rideshare', shuttle: 'Shuttle' };
+      const modeLabels = { personal: 'Personal Car', rental: 'Rental Car', transit: 'Transit/Train', taxi: 'Taxi/Rideshare', shuttle: 'Shuttle' };
       totals.groundTripDetails.forEach(t => {
         if (t.date) {
+          const tripLabel = t.mode === 'rental' ? 'Rental Car' : `${modeLabels[t.mode] || t.mode}, ${t.isRoundtrip ? 'Roundtrip' : 'One-Way'}`;
           timelineEvents.push({
             date: t.date,
-            desc: `Ground Travel (${modeLabels[t.mode] || t.mode}, ${t.isRoundtrip ? 'Roundtrip' : 'One-Way'}): ${t.origin} -> ${t.dest}`
+            desc: `Ground Travel (${tripLabel}): ${t.origin}${t.dest ? ' -> ' + t.dest : ''}`
           });
         }
       });
@@ -3205,7 +3541,8 @@
           overReasons.push(`${label}${noteVal ? ': ' + noteVal : ''}`);
         }
       };
-      addOverReason('htOverConfHotel', 'htOverConfHotelNotes', 'Conference hotel');
+      addOverReason('htOverConfHotel', 'htOverConfHotelNotes', 'Lodging at prearranged place (conference hotel)');
+      addOverReason('htOverSpecialEvents', 'htOverSpecialEventsNotes', 'Special events escalated cost');
       addOverReason('htOverSafety', 'htOverSafetyNotes', 'Safety considerations');
       addOverReason('htOverDistance', 'htOverDistanceNotes', 'Distance from conference (esp if not renting a car)');
       addOverReason('htOverHighDemand', 'htOverHighDemandNotes', 'High demand in area during conference');
@@ -3301,9 +3638,23 @@
       }
 
       let adjItems = [];
+      if (document.getElementById('sfUseOfOH')?.checked) adjItems.push(`Use of Overhead Funds: ${document.getElementById('sfUseOfOHNotes').value || 'Yes'}`);
+      if (document.getElementById('sfRentalCar')?.checked || totals.rentalCarTotal > 0) {
+        const rcNote = document.getElementById('sfRentalCarNotes')?.value?.trim();
+        adjItems.push(`Use of Rental Car: ${rcNote || 'Yes'}`);
+      }
+      if (document.getElementById('sfInternational')?.checked || document.getElementById('sfIntlDomestic')?.checked || document.getElementById('sfIntlNonDomestic')?.checked) {
+        const carriers = [];
+        if (document.getElementById('sfIntlDomestic')?.checked) carriers.push('Domestic air carriers');
+        if (document.getElementById('sfIntlNonDomestic')?.checked) carriers.push('Non-domestic air carriers');
+        const iNote = document.getElementById('sfInternationalNotes')?.value?.trim();
+        adjItems.push(`International Travel${carriers.length ? ' (' + carriers.join(', ') + ')' : ''}: ${iNote || 'Yes'}`);
+      }
+      if (document.getElementById('sfComparables')?.checked) adjItems.push(`Comparable Lodging/Airfare: ${document.getElementById('sfComparablesNotes').value || 'Yes'}`);
       if (document.getElementById('adjFamily')?.checked) adjItems.push(`Partner/Family Traveling: ${document.getElementById('adjFamilyNotes').value || 'Yes'}`);
       if (document.getElementById('adjSharedRoom')?.checked) adjItems.push(`Shared Rooming: ${document.getElementById('adjSharedRoomNotes').value || 'Yes'}`);
       if (document.getElementById('adjSharedRoomNoDiff')?.checked) adjItems.push(`Verified: No difference in hotel cost between single and double occupancy: ${document.getElementById('adjSharedRoomNoDiffNotes').value || 'See attached comparison in Travel Summary'}`);
+      if (document.getElementById('adjTravelAgent')?.checked) adjItems.push(`Use of SSI Travel Agent: ${document.getElementById('adjTravelAgentNotes').value || 'Yes'}`);
       if (document.getElementById('adjOutsideOrg')?.checked) adjItems.push(`Outside Org Support: ${document.getElementById('adjOutsideOrgNotes').value || 'Yes'}`);
       if (document.getElementById('adjPersonalTime')?.checked) adjItems.push(`Personal Time Added: ${document.getElementById('adjPersonalTimeNotes').value || 'Yes'}`);
       if (document.getElementById('adjAltLocation')?.checked) adjItems.push(`Non-Home Departure/Arrival: ${document.getElementById('adjAltLocationNotes').value || 'Yes'}`);
@@ -3350,7 +3701,7 @@
           notes ? { text: 'General Itinerary Notes & Special Instructions', style: 'sectionHeader' } : {},
           notes ? { text: notes, fontSize: 9.5, margin: [0, 2, 0, 15], color: '#334155' } : {},
 
-          adjItems.length ? { text: 'Travel Adjustments & Non-Standard Situations', style: 'sectionHeader' } : {},
+          adjItems.length ? { text: 'Special Funding Approvals & Non-Standard Situations', style: 'sectionHeader' } : {},
           adjItems.length ? { ul: adjItems, fontSize: 10, margin: [0, 0, 0, 15] } : {},
 
           { text: 'Estimated Expense Summary', style: 'sectionHeader' },
@@ -3363,6 +3714,7 @@
                 [airfareSummaryLabel, { text: `$${totals.airfareTotal.toFixed(2)}`, alignment: 'right' }],
                 ['Meeting Registration Fee', { text: `$${totals.regFee.toFixed(2)}`, alignment: 'right' }],
                 [`Other / Additional Conference Fees${totals.addFeeDesc ? ' (' + totals.addFeeDesc + ')' : ''}`, { text: `$${totals.addFee.toFixed(2)}`, alignment: 'right' }],
+                ['Rental Car Total', { text: `$${totals.rentalCarTotal.toFixed(2)}`, alignment: 'right' }],
                 ['Personal Car Mileage Total', { text: `$${totals.mileageTotal.toFixed(2)}`, alignment: 'right' }],
                 ['Taxi / Rideshare / Train / Shuttle Total', { text: `$${totals.transitTotal.toFixed(2)}`, alignment: 'right' }],
                 [{ text: 'Total Estimated Expenses', bold: true }, { text: `$${totals.grandTotal.toFixed(2)}`, bold: true, alignment: 'right' }]
@@ -3388,7 +3740,7 @@
 
     function generateMileagePDF() {
       const name = document.getElementById('travelerName').value || 'Traveler';
-      pdfMake.createPdf(getMileageDocDefinition()).download(`Mileage_Report_${name.replace(/\s+/g, '_')}.pdf`);
+      pdfMake.createPdf(getMileageDocDefinition()).download(`Mileage_Ground_Report_${name.replace(/\s+/g, '_')}.pdf`);
     }
 
     function generateItineraryPDF() {
@@ -3439,7 +3791,7 @@
           await appendPdfMake(getFlightCompDocDefinition());
         }
 
-        // Only append Ground Transportation Summary if mileage/ground entries exist
+        // Only append Ground Transportation Summary if mileage/ground/rental entries exist
         const hasMileage = document.querySelectorAll('[id^="mileageRow_"]').length > 0;
         if (hasMileage) {
           await appendPdfMake(getMileageDocDefinition());
