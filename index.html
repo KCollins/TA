@@ -205,7 +205,7 @@
 
         <div id="hotelsContainer" class="space-y-3"></div>
 
-        <!-- Hotel Reservation Note (Replaces Hotel PDF Upload) -->
+        <!-- Hotel Reservation Note -->
         <div class="p-3 bg-amber-50/70 border border-amber-200 rounded-lg text-xs text-amber-900 font-medium">
           ℹ️ Hotel reservation confirmation is not needed for the TA, although it will be required for the TEV. Any supplemental paperwork can be attached below.
         </div>
@@ -316,7 +316,7 @@
 
             <div>
               <label class="block text-[11px] font-semibold text-slate-600 mb-0.5">Comment / Rate Comparison Notes</label>
-              <input type="text" id="htSingleOccComment" placeholder="e.g. Single and double queen rooms are both $225/night (see screenshot below)" class="chk-input w-full border rounded p-1.5 text-xs field-empty">
+              <input type="text" id="htSingleOccComment" placeholder="e.g. Single and double queen rooms are both $279/night (see screenshot below)" class="chk-input w-full border rounded p-1.5 text-xs field-empty">
             </div>
           </div>
 
@@ -505,6 +505,7 @@
     let hotelCounter = 0;
     let mileageCounter = 0;
     let costCenterCounter = 0;
+    const legFetchTimers = {};
 
     // Store covered meals by ISO date string: { 'YYYY-MM-DD': { breakfast: bool, lunch: bool, dinner: bool } }
     let coveredMealsByDate = {};
@@ -525,8 +526,18 @@
       return Math.floor(num * 100 + 1e-9) / 100;
     }
 
+    // --- Federal Fiscal Year Helper (Oct 1 - Sep 30; Oct-Dec 2026 => FY 2027) ---
+    function getFiscalYearForDate(dateStr) {
+      const d = dateStr ? parseISODateLocal(dateStr) : new Date();
+      if (!d || isNaN(d.getTime())) {
+        const now = new Date();
+        return now.getMonth() >= 9 ? now.getFullYear() + 1 : now.getFullYear();
+      }
+      return d.getMonth() >= 9 ? d.getFullYear() + 1 : d.getFullYear();
+    }
+
     // --- Standard GSA M&IE Breakdown Helper ---
-    // Official GSA CONUS M&IE tiers (FY2026/2027) + standard GSA proportional allocation (15% B / 25% L / 40% D / 20% Inc)
+    // Official GSA CONUS M&IE tiers + standard GSA proportional allocation (15% B / 25% L / 40% D / 20% Inc)
     function getGSAMealBreakdown(dailyRate) {
       const rate = parseFloat(dailyRate) || 0;
       const gsaTiers = {
@@ -786,10 +797,26 @@
     }
 
     // --- Dynamic Trip Legs ---
+    function scheduleAutoGSAFetch(id) {
+      clearTimeout(legFetchTimers[id]);
+      legFetchTimers[id] = setTimeout(() => {
+        const type = document.getElementById(`legType_${id}`)?.value;
+        const city = document.getElementById(`legCity_${id}`)?.value?.trim();
+        const state = document.getElementById(`legState_${id}`)?.value?.trim();
+        if (type === 'Business' && city && state && state.length === 2) {
+          fetchGSARatesForLeg(id, true);
+        }
+      }, 650);
+    }
+
     function addLegRow(data = {}) {
       legCounter++;
       const id = legCounter;
       const container = document.getElementById('legsContainer');
+
+      // Standard FY 2027 CONUS fallback ($68 M&IE, $113 Lodging) until GSA location is fetched
+      const defaultMeal = data.mealRate !== undefined ? data.mealRate : 68;
+      const defaultLodging = data.lodgingRate !== undefined ? data.lodgingRate : 113;
 
       const html = `
         <div id="legRow_${id}" class="p-3 bg-white border border-slate-200 rounded-lg shadow-sm space-y-2 relative">
@@ -802,7 +829,7 @@
               </select>
             </div>
             <div class="flex gap-2 items-center">
-              <button type="button" onclick="fetchGSARatesForLeg(${id})" class="px-2 py-1 bg-indigo-50 hover:bg-indigo-100 text-indigo-700 text-xs font-medium rounded border border-indigo-200">
+              <button type="button" onclick="fetchGSARatesForLeg(${id}, false)" class="px-2 py-1 bg-indigo-50 hover:bg-indigo-100 text-indigo-700 text-xs font-medium rounded border border-indigo-200">
                 🌐 Fetch GSA Rates
               </button>
               ${container.children.length > 0 ? `<button type="button" onclick="removeLegRow(${id})" class="text-red-600 hover:text-red-800 text-xs font-bold px-2">✕ Remove</button>` : ''}
@@ -812,7 +839,7 @@
           <div class="grid grid-cols-1 md:grid-cols-7 gap-2 text-xs">
             <div>
               <label class="block text-slate-500 mb-0.5">Start Date</label>
-              <input type="date" id="legStart_${id}" value="${data.start || ''}" class="chk-input w-full border rounded p-1.5" onchange="calculateTotals()" required />
+              <input type="date" id="legStart_${id}" value="${data.start || ''}" class="chk-input w-full border rounded p-1.5" onchange="calculateTotals(); scheduleAutoGSAFetch(${id});" required />
             </div>
             <div>
               <label class="block text-slate-500 mb-0.5">End Date</label>
@@ -820,26 +847,26 @@
             </div>
             <div>
               <label class="block text-slate-500 mb-0.5">City</label>
-              <input type="text" id="legCity_${id}" value="${data.city || ''}" placeholder="San Francisco" class="chk-input w-full border rounded p-1.5" required />
+              <input type="text" id="legCity_${id}" value="${data.city || ''}" placeholder="San Francisco" class="chk-input w-full border rounded p-1.5" onchange="scheduleAutoGSAFetch(${id})" required />
             </div>
             <div>
               <label class="block text-slate-500 mb-0.5">State (ST)</label>
-              <input type="text" id="legState_${id}" value="${data.state || ''}" placeholder="CA" maxlength="2" class="chk-input w-full border rounded p-1.5" required />
+              <input type="text" id="legState_${id}" value="${data.state || ''}" placeholder="CA" maxlength="2" class="chk-input w-full border rounded p-1.5" onchange="scheduleAutoGSAFetch(${id})" required />
             </div>
             <div>
               <label class="block text-slate-500 mb-0.5">Leg Purpose</label>
               <input type="text" id="legPurpose_${id}" value="${data.purpose || ''}" placeholder="AGU Conference" class="chk-input w-full border rounded p-1.5" />
             </div>
             <div>
-              <label class="block text-slate-500 mb-0.5">M&IE Rate ($)</label>
-              <input type="number" id="legMealRate_${id}" value="${data.mealRate !== undefined ? data.mealRate : 79}" step="1" class="chk-input w-full border rounded p-1.5" oninput="calculateTotals()" />
+              <label class="block text-slate-500 mb-0.5">M&amp;IE Rate ($)</label>
+              <input type="number" id="legMealRate_${id}" value="${defaultMeal}" step="1" class="chk-input w-full border rounded p-1.5" oninput="calculateTotals()" />
             </div>
             <div>
               <label class="block text-slate-500 mb-0.5">Lodging Rate ($)</label>
-              <input type="number" id="legLodgingRate_${id}" value="${data.lodgingRate !== undefined ? data.lodgingRate : 225}" step="1" class="chk-input w-full border rounded p-1.5" oninput="calculateTotals()" />
+              <input type="number" id="legLodgingRate_${id}" value="${defaultLodging}" step="1" class="chk-input w-full border rounded p-1.5" oninput="calculateTotals()" />
             </div>
           </div>
-          <div id="gsaStatus_${id}" class="text-[10px] text-indigo-700 hidden font-medium"></div>
+          <div id="gsaStatus_${id}" class="text-[11px] text-indigo-700 hidden font-medium"></div>
         </div>
       `;
 
@@ -869,8 +896,8 @@
       } else {
         mealInput.disabled = false;
         lodgingInput.disabled = false;
-        if (parseFloat(mealInput.value) === 0) mealInput.value = 79;
-        if (parseFloat(lodgingInput.value) === 0) lodgingInput.value = 225;
+        if (parseFloat(mealInput.value) === 0) mealInput.value = 68;
+        if (parseFloat(lodgingInput.value) === 0) lodgingInput.value = 113;
       }
       calculateTotals();
     }
@@ -1241,11 +1268,11 @@
             <!-- Dynamic Rate / Reserved Cost Container -->
             <div id="htRateCol_${id}">
               <label id="htRateLabel_${id}" class="block text-slate-500 mb-0.5">Nightly Rate ($)</label>
-              <input type="number" id="htRate_${id}" value="${data.rate !== undefined ? data.rate : ''}" placeholder="225.00" step="0.01" class="chk-input w-full border rounded p-1.5" oninput="calculateTotals()" />
+              <input type="number" id="htRate_${id}" value="${data.rate !== undefined ? data.rate : ''}" placeholder="279.00" step="0.01" class="chk-input w-full border rounded p-1.5" oninput="calculateTotals()" />
             </div>
             <div id="htReservedCol_${id}" class="hidden">
               <label class="block text-slate-500 mb-0.5">Total Reserved Cost ($)</label>
-              <input type="number" id="htReservedAmt_${id}" value="${data.reservedAmt !== undefined ? data.reservedAmt : ''}" placeholder="450.00" step="0.01" class="chk-input w-full border rounded p-1.5" oninput="calculateTotals()" />
+              <input type="number" id="htReservedAmt_${id}" value="${data.reservedAmt !== undefined ? data.reservedAmt : ''}" placeholder="558.00" step="0.01" class="chk-input w-full border rounded p-1.5" oninput="calculateTotals()" />
             </div>
 
             <div>
@@ -1283,7 +1310,7 @@
           rateInput.placeholder = 'GSA Rate';
         } else {
           rateLabel.innerText = 'Nightly Rate ($)';
-          rateInput.placeholder = '225.00';
+          rateInput.placeholder = '279.00';
         }
       }
     }
@@ -1301,7 +1328,6 @@
       const id = mileageCounter;
       const container = document.getElementById('mileageContainer');
 
-      // Normalize legacy mode values
       let mode = data.mode || 'personal';
       if (mode === 'driving') mode = 'personal';
 
@@ -1824,8 +1850,6 @@
 
       rawDays.forEach(d => {
         if (d.isBusiness) {
-          // Formula: for N business days, total = (N - 0.5) * perdiem
-          // If N == 1, multiplier = 0.5; if N >= 2, first & last business days = 0.75, middle days = 1.0
           let multiplier = 1.0;
           if (bizDays === 1) {
             multiplier = 0.5;
@@ -1945,25 +1969,31 @@
       };
     }
 
-    // --- GSA API Fetcher ---
-    async function fetchGSARatesForLeg(id) {
-      const city = document.getElementById(`legCity_${id}`).value.trim();
-      const state = document.getElementById(`legState_${id}`).value.trim().toUpperCase();
-      const startDateVal = document.getElementById(`legStart_${id}`).value;
+    // --- GSA Per Diem v2 API Fetcher (FY 2027 & Seasonal Monthly Lodging) ---
+    async function fetchGSARatesForLeg(id, silent = false) {
+      const cityEl = document.getElementById(`legCity_${id}`);
+      const stateEl = document.getElementById(`legState_${id}`);
+      const startEl = document.getElementById(`legStart_${id}`);
+      if (!cityEl || !stateEl) return;
+
+      const city = cityEl.value.trim();
+      const state = stateEl.value.trim().toUpperCase();
+      const startDateVal = startEl?.value || '';
 
       if (!city || !state) {
-        alert("Please enter a City and State Code for this leg first.");
+        if (!silent) alert("Please enter a City and State Code for this leg first.");
         return;
       }
 
-      let fy = new Date().getFullYear();
-      if (startDateVal) {
-        const d = parseISODateLocal(startDateVal);
-        fy = d.getMonth() >= 9 ? d.getFullYear() + 1 : d.getFullYear();
-      }
+      const fy = getFiscalYearForDate(startDateVal);
+      const refDate = startDateVal ? parseISODateLocal(startDateVal) : new Date();
+      const monthIndex = refDate.getMonth(); // 0-11
+      const monthNumber = monthIndex + 1;    // 1-12 (matches GSA API `m.number`)
+      const monthKeys = ['Jan', 'Feb', 'Mar', 'Apr', 'May', 'Jun', 'Jul', 'Aug', 'Sep', 'Oct', 'Nov', 'Dec'];
+      const monthKey = monthKeys[monthIndex];
 
       const statusEl = document.getElementById(`gsaStatus_${id}`);
-      statusEl.innerText = `Fetching GSA per diem for ${city}, ${state} (FY ${fy})...`;
+      statusEl.innerText = `Fetching FY ${fy} GSA per diem for ${city}, ${state} (${monthKey})...`;
       statusEl.classList.remove('hidden');
 
       try {
@@ -1976,30 +2006,52 @@
         }
 
         if (data && data.rates && data.rates.length > 0) {
-          const rateData = data.rates.find(r => r.city && r.city.toLowerCase().includes(city.toLowerCase())) || data.rates[0];
-          
-          if (rateData.rate && rateData.rate[0]) {
-            if (rateData.rate[0].meals) {
-              document.getElementById(`legMealRate_${id}`).value = rateData.rate[0].meals;
+          const cityLower = city.toLowerCase();
+          const rateData =
+            data.rates.find(r => r.city && r.city.toLowerCase() === cityLower) ||
+            data.rates.find(r => r.city && r.city.toLowerCase().includes(cityLower)) ||
+            data.rates.find(r => r.standardRate === 'true' || r.standardRate === true) ||
+            data.rates[0];
+
+          const rateObj = Array.isArray(rateData.rate) ? rateData.rate[0] : rateData.rate;
+          let fetchedMeals = null;
+          let fetchedLodging = null;
+
+          if (rateObj) {
+            if (rateObj.meals !== undefined && rateObj.meals !== null) {
+              fetchedMeals = Number(rateObj.meals);
+              document.getElementById(`legMealRate_${id}`).value = fetchedMeals;
             }
 
-            const monthIndex = startDateVal ? parseISODateLocal(startDateVal).getMonth() : 0;
-            const monthKeys = ['Jan', 'Feb', 'Mar', 'Apr', 'May', 'Jun', 'Jul', 'Aug', 'Sep', 'Oct', 'Nov', 'Dec'];
-            const monthKey = monthKeys[monthIndex];
+            // GSA API stores monthly lodging in rateObj.months.month with keys: { number: 1..12, short: "Nov", long: "November", value: 279 }
+            const monthList = Array.isArray(rateObj.months?.month)
+              ? rateObj.months.month
+              : (Array.isArray(rateObj.months) ? rateObj.months : []);
 
-            if (rateData.rate[0].months && rateData.rate[0].months.month) {
-              const monthObj = rateData.rate[0].months.month.find(m => m.shortMonth === monthKey);
-              if (monthObj) document.getElementById(`legLodgingRate_${id}`).value = monthObj.value;
+            if (monthList.length > 0) {
+              const monthObj = monthList.find(m =>
+                Number(m.number) === monthNumber ||
+                String(m.short || m.shortMonth || '').toLowerCase() === monthKey.toLowerCase()
+              );
+              if (monthObj && monthObj.value !== undefined && monthObj.value !== null) {
+                fetchedLodging = Number(monthObj.value);
+                document.getElementById(`legLodgingRate_${id}`).value = fetchedLodging;
+              }
+            } else if (rateObj.value !== undefined && rateObj.value !== null) {
+              fetchedLodging = Number(rateObj.value);
+              document.getElementById(`legLodgingRate_${id}`).value = fetchedLodging;
             }
           }
 
-          statusEl.innerText = `✓ GSA Rates set for ${rateData.city || city}, ${state}!`;
+          const locLabel = rateData.city ? `${rateData.city}, ${state}` : `${city}, ${state}`;
+          statusEl.innerText = `✓ FY ${fy} GSA Rates set for ${locLabel} (${monthKey}): $${fetchedMeals ?? 'N/A'}/day M&IE, $${fetchedLodging ?? 'N/A'}/night Lodging.`;
+          updateFieldHighlights();
           calculateTotals();
         } else {
-          statusEl.innerText = "⚠️ Standard rates applied for this location.";
+          statusEl.innerText = `⚠️ No specific GSA entry found for ${city}, ${state} (FY ${fy}). Standard rates retained.`;
         }
       } catch (err) {
-        statusEl.innerText = `⚠️ Applied standard rates (${err.message}).`;
+        statusEl.innerText = `⚠️ Could not reach GSA API (${err.message}). Verify FY ${fy} rates manually.`;
       }
     }
 
@@ -2238,7 +2290,6 @@
 
           if (data.flights && data.flights.length) {
             data.flights.forEach((f, idx) => {
-              // Backwards compatibility if importing an older JSON draft
               if (idx === 0 && !f.compReasons && data.flightCompReasons) {
                 f.compReasons = data.flightCompReasons;
               }
@@ -2276,6 +2327,77 @@
       }
     }
 
+    // --- Build Brief Summary Text for Special Funding Approval Justifications ---
+    function getSpecialFundingSummaries(totals) {
+      // 1. Over Per Diem / Prearranged Lodging summary
+      const overParts = [];
+      const addOverPart = (cbId, noteId, label) => {
+        if (document.getElementById(cbId)?.checked) {
+          const n = document.getElementById(noteId)?.value?.trim();
+          overParts.push(n ? `${label} (${n})` : label);
+        }
+      };
+      addOverPart('htOverConfHotel', 'htOverConfHotelNotes', 'Conference hotel');
+      addOverPart('htOverSafety', 'htOverSafetyNotes', 'Safety considerations');
+      addOverPart('htOverDistance', 'htOverDistanceNotes', 'Distance from conference');
+      addOverPart('htOverHighDemand', 'htOverHighDemandNotes', 'High demand in area');
+      addOverPart('htOverOther', 'htOverOtherNotes', 'Other');
+      const overPerDiemText = overParts.length > 0
+        ? `See attached — ${overParts.join('; ')}`
+        : 'See attached';
+
+      // 2. Non-Standard Situations summary
+      const nonStdParts = [];
+      const addAdjPart = (cbId, noteId, label) => {
+        if (document.getElementById(cbId)?.checked) {
+          const n = document.getElementById(noteId)?.value?.trim();
+          nonStdParts.push(n ? `${label} (${n})` : label);
+        }
+      };
+      addAdjPart('adjFamily', 'adjFamilyNotes', 'Traveling with partner/family');
+      addAdjPart('adjSharedRoom', 'adjSharedRoomNotes', 'Shared rooming');
+      if (document.getElementById('adjSharedRoomNoDiff')?.checked) {
+        nonStdParts.push('Single/double room cost verified equal');
+      }
+      addAdjPart('adjOutsideOrg', 'adjOutsideOrgNotes', 'Outside org support');
+      addAdjPart('adjPersonalTime', 'adjPersonalTimeNotes', 'Personal time added');
+      addAdjPart('adjAltLocation', 'adjAltLocationNotes', 'Non-home start/stop');
+      addAdjPart('adjOther', 'adjOtherNotes', 'Other');
+      const nonStdText = nonStdParts.length > 0
+        ? `See attached — ${nonStdParts.join('; ')}`
+        : 'See attached';
+
+      // 3. Comparable Lodging / Airfare summary
+      const compParts = [];
+      const flightReasonsAll = [];
+      totals.flightDetails.forEach(fl => {
+        fl.compReasons.forEach(r => {
+          if (!flightReasonsAll.includes(r)) flightReasonsAll.push(r);
+        });
+      });
+      if (flightReasonsAll.length > 0) {
+        compParts.push(`Flight comp (${flightReasonsAll.join(', ')})`);
+      } else if (hasAnyFlightCompActivity() || flightCompScreenshots.length > 0) {
+        compParts.push('Flight comp');
+      }
+
+      const hasHotelComp =
+        hotelSingleOccScreenshots.length > 0 ||
+        (totals.hotelCompInfo?.isFamilyOrShared && totals.hotelCompInfo?.compMode !== 'not_available');
+      if (hasHotelComp) {
+        compParts.push('Single-occupancy lodging comp');
+      }
+      const comparablesText = compParts.length > 0
+        ? `See attached — ${compParts.join('; ')}`
+        : 'See attached';
+
+      return {
+        overPerDiemText,
+        nonStdText,
+        comparablesText
+      };
+    }
+
     // --- Fill TA PDF Template ---
     async function getFilledTABytes() {
       const lib = getPDFLib();
@@ -2309,7 +2431,6 @@
       try {
         const page1 = pdfDoc.getPages()[0];
         const font = await pdfDoc.embedFont(lib.StandardFonts.HelveticaBold);
-        // Cover static "5781" at bbox (136.83, 690.95) -> (163.71, 704.95)
         page1.drawRectangle({
           x: 135,
           y: 690,
@@ -2429,6 +2550,99 @@
         checkBoxSafe('Comparables');
       }
 
+      // --- Populate "See attached — [brief summary]" in the JUSTIFICATION column for every checked box under Special Funding Approvals ---
+      try {
+        const page1Ref = pdfDoc.getPages()[0].ref;
+        const allFields = form.getFields();
+        const summaries = getSpecialFundingSummaries(totals);
+
+        // Collect all TextFields on Page 1 located in the Special Funding Approvals JUSTIFICATION column
+        const justificationFields = [];
+        const specialCheckboxes = [];
+
+        allFields.forEach(f => {
+          const widgets = f.acroField.getWidgets();
+          if (!widgets || widgets.length === 0) return;
+          const w = widgets[0];
+          const pRef = w.P();
+          if (pRef && pRef !== page1Ref) return;
+          const rect = w.getRectangle();
+
+          // Special Funding Approvals section sits below y ~ 470 and above y ~ 75 on Page 1
+          if (rect.y >= 75 && rect.y <= 470) {
+            if (f instanceof lib.PDFTextField && rect.x >= 170 && rect.x <= 465) {
+              justificationFields.push({ field: f, name: f.getName(), rect });
+            } else if (f instanceof lib.PDFCheckBox && rect.x < 350) {
+              specialCheckboxes.push({ field: f, name: f.getName(), rect });
+            }
+          }
+        });
+
+        // Map each checked checkbox in Special Funding Approvals to its matching Justification text field by vertical position
+        const assignedTextByFieldName = new Map();
+
+        specialCheckboxes.forEach(cbInfo => {
+          let isChecked = false;
+          try { isChecked = cbInfo.field.isChecked(); } catch (e) {}
+          if (!isChecked) return;
+
+          const cbCenterY = cbInfo.rect.y + cbInfo.rect.height / 2;
+
+          // Find justification text field whose vertical band contains cbCenterY (or nearest vertically)
+          let targetTf = justificationFields.find(tf =>
+            cbCenterY >= (tf.rect.y - 4) && cbCenterY <= (tf.rect.y + tf.rect.height + 4)
+          );
+          if (!targetTf && justificationFields.length > 0) {
+            targetTf = [...justificationFields].sort((a, b) => {
+              const distA = Math.abs((a.rect.y + a.rect.height / 2) - cbCenterY);
+              const distB = Math.abs((b.rect.y + b.rect.height / 2) - cbCenterY);
+              return distA - distB;
+            })[0];
+          }
+
+          if (!targetTf) return;
+
+          const cbName = cbInfo.name;
+          let summaryForBox = 'See attached';
+          if (cbName === 'Over Per Diem' || cbName === 'Prearranged') {
+            summaryForBox = summaries.overPerDiemText;
+          } else if (cbName === 'Nonstandard') {
+            summaryForBox = summaries.nonStdText;
+          } else if (cbName === 'Comparables') {
+            summaryForBox = summaries.comparablesText;
+          }
+
+          // Avoid duplicating identical text if multiple checkboxes share the same Justification row (e.g. Over Per Diem + Prearranged)
+          if (!assignedTextByFieldName.has(targetTf.name)) {
+            assignedTextByFieldName.set(targetTf.name, { tfInfo: targetTf, text: summaryForBox });
+          } else {
+            const existing = assignedTextByFieldName.get(targetTf.name);
+            if (existing.text !== summaryForBox && summaryForBox !== 'See attached') {
+              const extraSuffix = summaryForBox.replace(/^See attached(\s*—\s*)?/, '');
+              if (extraSuffix && !existing.text.includes(extraSuffix)) {
+                existing.text = existing.text === 'See attached'
+                  ? `See attached — ${extraSuffix}`
+                  : `${existing.text}; ${extraSuffix}`;
+              }
+            }
+          }
+        });
+
+        assignedTextByFieldName.forEach(({ tfInfo, text }) => {
+          try {
+            if (tfInfo.rect.height >= 18) {
+              tfInfo.field.enableMultiline();
+            }
+            tfInfo.field.setFontSize(8);
+            tfInfo.field.setText(text);
+          } catch (e) {
+            tfInfo.field.setText(text);
+          }
+        });
+      } catch (e) {
+        console.warn("Could not populate Special Funding Justification fields:", e);
+      }
+
       const ccFields = [
         ['COST CENTER NO', 'AMOUNT', 'DESCRIPTION'],
         ['undefined_5', 'undefined_6', 'undefined_7'],
@@ -2490,19 +2704,19 @@
         ]);
       });
 
-      const firstBiz = bizLegs[0] || { city: 'Destination', state: 'ST', startStr: new Date().getFullYear() };
-      const year = firstBiz.startStr ? parseISODateLocal(firstBiz.startStr).getFullYear() : new Date().getFullYear();
-      const gsaWebUrl = `https://www.gsa.gov/travel/plan-book/per-diem-rates/per-diem-rates-results?action=perdiems_report&fiscal_year=${year}&state=${firstBiz.state}&city=${encodeURIComponent(firstBiz.city)}&zip=`;
+      const firstBiz = bizLegs[0] || { city: 'Destination', state: 'ST', startStr: '' };
+      const fy = getFiscalYearForDate(firstBiz.startStr);
+      const gsaWebUrl = `https://www.gsa.gov/travel/plan-book/per-diem-rates/per-diem-rates-results?action=perdiems_report&fiscal_year=${fy}&state=${firstBiz.state}&city=${encodeURIComponent(firstBiz.city)}&zip=`;
 
       return {
         content: [
           { text: 'U.S. General Services Administration (GSA)', style: 'agencyHeader', alignment: 'center' },
-          { text: `FY ${year} Per Diem Rates Breakdown`, style: 'header', alignment: 'center', margin: [0, 2, 0, 15] },
+          { text: `FY ${fy} Per Diem Rates Breakdown`, style: 'header', alignment: 'center', margin: [0, 2, 0, 15] },
           { table: { widths: ['22%', '12%', '26%', '20%', '10%', '10%'], body: tableBody }, margin: [0, 0, 0, 15] },
           { text: 'Documentation & Data Verification', style: 'sectionHeader' },
           {
             text: [
-              `These rates were obtained on `, { text: todayFormatted, bold: true }, ` from the GSA Per Diem API.\n\n`,
+              `These FY ${fy} rates were obtained on `, { text: todayFormatted, bold: true }, ` from the GSA Per Diem API.\n\n`,
               `Current official rates can be verified online at:\n`,
               { text: gsaWebUrl, link: gsaWebUrl, color: '#0284c7', decoration: 'underline' }
             ],
@@ -2659,7 +2873,6 @@
       const purpose = document.getElementById('businessPurpose').value || 'N/A';
       const notes = document.getElementById('itineraryNotes')?.value?.trim();
 
-      // 1. Legs Bulleted List (Outside the table)
       let legBulletItems = [];
       totals.legs.forEach(leg => {
         const legTypeLabel = leg.type === 'Business' ? 'Business Leg' : 'Personal Leg';
@@ -2667,10 +2880,8 @@
         legBulletItems.push(legStr);
       });
 
-      // 2. Timeline Events for Table
       let timelineEvents = [];
 
-      // Parse Conferences Chronologically
       document.querySelectorAll('[id^="confRow_"]').forEach(row => {
         const id = row.id.split('_')[1];
         const start = document.getElementById(`confStart_${id}`)?.value;
@@ -2699,7 +2910,6 @@
         }
       });
 
-      // Parse Flights Chronologically
       totals.flightDetails.forEach(fl => {
         const orig = fl.origin || 'Origin';
         const dest = fl.dest || 'Destination';
@@ -2727,7 +2937,6 @@
         }
       });
 
-      // Parse Hotels
       document.querySelectorAll('[id^="hotelRow_"]').forEach(row => {
         const id = row.id.split('_')[1];
         const start = document.getElementById(`htStart_${id}`)?.value;
@@ -2749,7 +2958,6 @@
         }
       });
 
-      // Parse Ground Mileage & Transit
       const modeLabels = { personal: 'Personal Car', transit: 'Transit/Train', taxi: 'Taxi/Rideshare', shuttle: 'Shuttle' };
       totals.groundTripDetails.forEach(t => {
         if (t.date) {
@@ -2760,7 +2968,6 @@
         }
       });
 
-      // Group Events by Date
       const groupedMap = {};
       timelineEvents.forEach(e => {
         if (!groupedMap[e.date]) groupedMap[e.date] = [];
@@ -2783,7 +2990,6 @@
         ]);
       });
 
-      // 3. Day-by-Day Meals Breakdown Table
       let dailyMealsTable = [
         [{ text: 'Date', bold: true }, { text: 'Location / Rule', bold: true }, { text: 'Day-by-Day Meal Breakdown', bold: true }, { text: 'Day M&IE Total', bold: true }]
       ];
@@ -2810,7 +3016,6 @@
         }
       });
 
-      // 4. Hotel Lodging Calculation Breakdown & Over Per Diem Reasons
       let hotelCalcBlocks = [];
       if (totals.usedHotelRows) {
         let hotelTable = [
@@ -2843,7 +3048,6 @@
         });
       }
 
-      // Over-per-diem reasons list
       const overReasons = [];
       const addOverReason = (cbId, noteId, label) => {
         if (document.getElementById(cbId)?.checked) {
@@ -2872,7 +3076,6 @@
         });
       }
 
-      // Single-Occupancy Comparison (when Traveling with partner/family OR Shared rooming situation is checked)
       const isFamilyOrShared = document.getElementById('adjFamily')?.checked || document.getElementById('adjSharedRoom')?.checked;
       if (isFamilyOrShared) {
         const singleConfirmed = document.getElementById('htSingleOccConfirmed')?.checked;
@@ -2922,7 +3125,6 @@
         });
       }
 
-      // 5. Conference Registration & Additional Conference Costs Itemization
       let confBlocks = [];
       const activeConfs = totals.conferenceDetails.filter(c => c.name || c.regFee > 0 || c.addFees.length > 0);
       if (activeConfs.length > 0) {
@@ -2948,7 +3150,6 @@
         confBlocks.push({ table: { widths: ['24%', '24%', '38%', '14%'], body: confTable }, margin: [0, 3, 0, 12] });
       }
 
-      // 6. Travel Adjustments Checklist
       let adjItems = [];
       if (document.getElementById('adjFamily')?.checked) adjItems.push(`Partner/Family Traveling: ${document.getElementById('adjFamilyNotes').value || 'Yes'}`);
       if (document.getElementById('adjSharedRoom')?.checked) adjItems.push(`Shared Rooming: ${document.getElementById('adjSharedRoomNotes').value || 'Yes'}`);
